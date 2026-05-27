@@ -1,4 +1,6 @@
 package com.syncforge.syncforge.tenant.model;
 
-public class TenantStatus {
+public enum TenantStatus {
+    ACTIVE,
+    SUSPENDED
 }
