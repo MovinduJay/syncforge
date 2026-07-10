@@ -1,4 +1,4 @@
 package com.syncforge.syncforge.tenant.dto;
 
-public class CreateTenantResponse {
+public class CreateTenantRequest{
 }
