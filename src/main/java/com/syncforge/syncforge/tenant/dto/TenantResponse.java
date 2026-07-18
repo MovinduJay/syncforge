@@ -1,4 +1,11 @@
 package com.syncforge.syncforge.tenant.dto;
 
-public class TenantResponse {
+import java.time.LocalDateTime;
+
+public record TenantResponse(
+        Long id,
+        String companyName,
+        String status,
+        LocalDateTime createdAt
+) {
 }
