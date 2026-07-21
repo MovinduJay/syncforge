@@ -1,4 +1,9 @@
 package com.syncforge.syncforge.syncjob.model;
 
-public class SyncJobStatus {
+public enum SyncJobStatus {
+    PENDING,
+    PROCESSING,
+    SUCCEEDED,
+    FAILED,
+    DEAD_LETTER
 }
