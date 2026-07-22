@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import com.syncforge.syncforge.messaging.publisher.SyncJobPublisher;
+import com.syncforge.syncforge.audit.service.AuditLogService;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -26,15 +27,19 @@ public class SyncJobService {
     private final SyncJobRepository syncJobRepository;
     private final IntegrationRepository integrationRepository;
     private final SyncJobPublisher syncJobPublisher;
+    private final AuditLogService auditLogService;
 
     public SyncJobService(
             SyncJobRepository syncJobRepository,
             IntegrationRepository integrationRepository,
-            SyncJobPublisher syncJobPublisher
+            SyncJobPublisher syncJobPublisher,
+            AuditLogService auditLogService
     ) {
         this.syncJobRepository = syncJobRepository;
         this.integrationRepository = integrationRepository;
         this.syncJobPublisher= syncJobPublisher;
+        this.auditLogService = auditLogService;
+
     }
 
     @Transactional
@@ -75,12 +80,14 @@ public class SyncJobService {
 
         List<SyncJob> savedSyncJobs = syncJobRepository.saveAll(syncJobs);
 
-        savedSyncJobs.forEach(syncJob ->
-                syncJobPublisher.publishSyncJob(
-                        syncJob.getTenant().getId(),
-                        syncJob.getId()
-                )
-        );
+        savedSyncJobs.forEach(syncJob -> {
+            auditLogService.logSyncJobCreated(syncJob);
+
+            syncJobPublisher.publishSyncJob(
+                    syncJob.getTenant().getId(),
+                    syncJob.getId()
+            );
+        });
 
         return savedSyncJobs.stream()
                 .map(this::toResponse)
@@ -149,11 +156,19 @@ public class SyncJobService {
         }
 
         syncJob.markProcessing();
+        auditLogService.logSyncJobProcessing(syncJob);
 
         if (simulateFailure) {
             handleFailedJob(syncJob, errorMessage);
+
+            if (syncJob.getStatus() == SyncJobStatus.DEAD_LETTER) {
+                auditLogService.logSyncJobDeadLetter(syncJob);
+            } else {
+                auditLogService.logSyncJobFailed(syncJob);
+            }
         } else {
             syncJob.markSucceeded();
+            auditLogService.logSyncJobSucceeded(syncJob);
         }
 
         return toResponse(syncJob);

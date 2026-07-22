@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import com.syncforge.syncforge.syncjob.service.SyncJobService;
+import com.syncforge.syncforge.audit.service.AuditLogService;
 
 import java.util.List;
 
@@ -24,17 +25,20 @@ public class WebhookEventService {
     private final IntegrationRepository integrationRepository;
     private final TenantRepository tenantRepository;
     private final SyncJobService syncJobService;
+    private final AuditLogService auditLogService;
 
     public WebhookEventService(
             WebhookEventRepository webhookEventRepository,
             IntegrationRepository integrationRepository,
             TenantRepository tenantRepository,
-            SyncJobService syncJobService
+            SyncJobService syncJobService,
+            AuditLogService auditLogService
     ) {
         this.webhookEventRepository = webhookEventRepository;
         this.integrationRepository = integrationRepository;
         this.tenantRepository = tenantRepository;
         this.syncJobService=syncJobService;
+        this.auditLogService=auditLogService;
     }
 
     @Transactional
@@ -54,8 +58,13 @@ public class WebhookEventService {
                         integrationId,
                         request.externalEventId()
                 )
-                .map(this::toDuplicateResponse)
+                .map(this::handleDuplicateWebhook)
                 .orElseGet(() -> createNewWebhookEvent(integration, request));
+    }
+
+    private WebhookEventResponse handleDuplicateWebhook(WebhookEvent webhookEvent) {
+        auditLogService.logWebhookDuplicate(webhookEvent);
+        return toDuplicateResponse(webhookEvent);
     }
 
     @Transactional(readOnly = true)
@@ -91,6 +100,7 @@ public class WebhookEventService {
 
         try {
             WebhookEvent savedWebhookEvent = webhookEventRepository.saveAndFlush(webhookEvent);
+            auditLogService.logWebhookReceived(savedWebhookEvent);
 
             syncJobService.createJobsForWebhookEvent(savedWebhookEvent);
 
