@@ -93,6 +93,33 @@ public class SyncJobService {
             Long jobId,
             ProcessSyncJobRequest request
     ) {
+        return processSyncJobInternal(
+                tenantId,
+                jobId,
+                request.simulateFailure(),
+                request.errorMessage()
+        );
+    }
+
+    @Transactional
+    public SyncJobResponse processSyncJobFromQueue(
+            Long tenantId,
+            Long jobId
+    ) {
+        return processSyncJobInternal(
+                tenantId,
+                jobId,
+                false,
+                null
+        );
+    }
+
+    private SyncJobResponse processSyncJobInternal(
+            Long tenantId,
+            Long jobId,
+            boolean simulateFailure,
+            String errorMessage
+    ) {
 
         SyncJob syncJob = syncJobRepository.findById(jobId)
                 .orElseThrow(() -> new ResponseStatusException(
@@ -123,8 +150,8 @@ public class SyncJobService {
 
         syncJob.markProcessing();
 
-        if (request.simulateFailure()) {
-            handleFailedJob(syncJob, request.errorMessage());
+        if (simulateFailure) {
+            handleFailedJob(syncJob, errorMessage);
         } else {
             syncJob.markSucceeded();
         }
