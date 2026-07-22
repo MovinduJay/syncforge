@@ -13,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import com.syncforge.syncforge.syncjob.service.SyncJobService;
 
 import java.util.List;
 
@@ -22,15 +23,18 @@ public class WebhookEventService {
     private final WebhookEventRepository webhookEventRepository;
     private final IntegrationRepository integrationRepository;
     private final TenantRepository tenantRepository;
+    private final SyncJobService syncJobService;
 
     public WebhookEventService(
             WebhookEventRepository webhookEventRepository,
             IntegrationRepository integrationRepository,
-            TenantRepository tenantRepository
+            TenantRepository tenantRepository,
+            SyncJobService syncJobService
     ) {
         this.webhookEventRepository = webhookEventRepository;
         this.integrationRepository = integrationRepository;
         this.tenantRepository = tenantRepository;
+        this.syncJobService=syncJobService;
     }
 
     @Transactional
@@ -87,6 +91,9 @@ public class WebhookEventService {
 
         try {
             WebhookEvent savedWebhookEvent = webhookEventRepository.saveAndFlush(webhookEvent);
+
+            syncJobService.createJobsForWebhookEvent(savedWebhookEvent);
+
             return toResponse(savedWebhookEvent);
         } catch (DataIntegrityViolationException exception) {
             throw new ResponseStatusException(

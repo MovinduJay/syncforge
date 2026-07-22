@@ -8,7 +8,15 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "sync_jobs")
+@Table(
+        name = "sync_jobs",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_sync_jobs_webhook_target",
+                        columnNames = {"webhook_event_id", "target_integration_id"}
+                )
+        }
+)
 public class SyncJob {
 
     @Id
