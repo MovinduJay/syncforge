@@ -13,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import com.syncforge.syncforge.messaging.publisher.SyncJobPublisher;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -24,13 +25,16 @@ public class SyncJobService {
 
     private final SyncJobRepository syncJobRepository;
     private final IntegrationRepository integrationRepository;
+    private final SyncJobPublisher syncJobPublisher;
 
     public SyncJobService(
             SyncJobRepository syncJobRepository,
-            IntegrationRepository integrationRepository
+            IntegrationRepository integrationRepository,
+            SyncJobPublisher syncJobPublisher
     ) {
         this.syncJobRepository = syncJobRepository;
         this.integrationRepository = integrationRepository;
+        this.syncJobPublisher= syncJobPublisher;
     }
 
     @Transactional
@@ -69,8 +73,16 @@ public class SyncJobService {
                 ))
                 .toList();
 
-        return syncJobRepository.saveAll(syncJobs)
-                .stream()
+        List<SyncJob> savedSyncJobs = syncJobRepository.saveAll(syncJobs);
+
+        savedSyncJobs.forEach(syncJob ->
+                syncJobPublisher.publishSyncJob(
+                        syncJob.getTenant().getId(),
+                        syncJob.getId()
+                )
+        );
+
+        return savedSyncJobs.stream()
                 .map(this::toResponse)
                 .toList();
     }
