@@ -1,4 +1,47 @@
 package com.syncforge.syncforge.integration.connector;
 
-public class CrmConnector {
+import com.syncforge.syncforge.integration.model.IntegrationType;
+import com.syncforge.syncforge.syncjob.model.SyncJob;
+import org.springframework.stereotype.Component;
+
+@Component
+public class CrmConnector implements ExternalSystemConnector {
+
+    @Override
+    public IntegrationType getSupportedType() {
+        return IntegrationType.CRM;
+    }
+
+    @Override
+    public SyncOperationResult sync(SyncJob syncJob) {
+        simulateNetworkDelay();
+
+        if (shouldFail(syncJob)) {
+            return new SyncOperationResult(
+                    false,
+                    "Simulated CRM API failure"
+            );
+        }
+
+        return new SyncOperationResult(
+                true,
+                "CRM customer sync completed"
+        );
+    }
+
+    private boolean shouldFail(SyncJob syncJob) {
+        String payloadJson = syncJob.getWebhookEvent().getPayloadJson();
+
+        return payloadJson != null
+                && payloadJson.contains("\"failTarget\":\"CRM\"");
+    }
+
+    private void simulateNetworkDelay() {
+        try {
+            Thread.sleep(300);
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("CRM sync interrupted", exception);
+        }
+    }
 }

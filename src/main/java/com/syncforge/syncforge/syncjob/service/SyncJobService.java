@@ -15,6 +15,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import com.syncforge.syncforge.audit.service.AuditLogService;
 import com.syncforge.syncforge.outbox.service.OutboxEventService;
+import com.syncforge.syncforge.integration.connector.ExternalSystemConnector;
+import com.syncforge.syncforge.integration.connector.IntegrationConnectorRegistry;
+import com.syncforge.syncforge.integration.connector.SyncOperationResult;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -28,17 +31,22 @@ public class SyncJobService {
     private final IntegrationRepository integrationRepository;
     private final OutboxEventService outboxEventService;
     private final AuditLogService auditLogService;
+    private final IntegrationConnectorRegistry connectorRegistry;
 
     public SyncJobService(
             SyncJobRepository syncJobRepository,
             IntegrationRepository integrationRepository,
             OutboxEventService outboxEventService,
-            AuditLogService auditLogService
+            AuditLogService auditLogService,
+            IntegrationConnectorRegistry connectorRegistry
+
     ) {
         this.syncJobRepository = syncJobRepository;
         this.integrationRepository = integrationRepository;
         this.outboxEventService= outboxEventService;
         this.auditLogService = auditLogService;
+        this.connectorRegistry = connectorRegistry;
+
 
     }
 
@@ -156,19 +164,42 @@ public class SyncJobService {
 
         if (simulateFailure) {
             handleFailedJob(syncJob, errorMessage);
-
-            if (syncJob.getStatus() == SyncJobStatus.DEAD_LETTER) {
-                auditLogService.logSyncJobDeadLetter(syncJob);
-            } else {
-                auditLogService.logSyncJobFailed(syncJob);
-            }
-        } else {
-            syncJob.markSucceeded();
-            auditLogService.logSyncJobSucceeded(syncJob);
+            logFailureStatus(syncJob);
+            return toResponse(syncJob);
         }
 
-        return toResponse(syncJob);
+        try {
+            ExternalSystemConnector connector = connectorRegistry.getConnector(
+                    syncJob.getTargetIntegration().getType()
+            );
+
+            SyncOperationResult result = connector.sync(syncJob);
+
+            if (result.success()) {
+                syncJob.markSucceeded();
+                auditLogService.logSyncJobSucceeded(syncJob);
+            } else {
+                handleFailedJob(syncJob, result.message());
+                logFailureStatus(syncJob);
+            }
+
+            return toResponse(syncJob);
+
+        } catch (Exception exception) {
+            handleFailedJob(syncJob, resolveErrorMessage(String.valueOf(exception)));
+            logFailureStatus(syncJob);
+            return toResponse(syncJob);
+        }
     }
+
+    private void logFailureStatus(SyncJob syncJob) {
+        if (syncJob.getStatus() == SyncJobStatus.DEAD_LETTER) {
+            auditLogService.logSyncJobDeadLetter(syncJob);
+        } else {
+            auditLogService.logSyncJobFailed(syncJob);
+        }
+    }
+
 
     @Transactional(readOnly = true)
     public List<SyncJobResponse> getSyncJobsByTenant(Long tenantId) {
@@ -193,6 +224,16 @@ public class SyncJobService {
         LocalDateTime nextRetryAt = LocalDateTime.now().plusMinutes(5);
 
         syncJob.markFailed(finalErrorMessage, nextRetryAt);
+    }
+
+    private String resolveErrorMessage(Exception exception) {
+        String message = exception.getMessage();
+
+        if (message == null || message.isBlank()) {
+            return exception.getClass().getSimpleName();
+        }
+
+        return message;
     }
 
     private String resolveErrorMessage(String errorMessage) {
