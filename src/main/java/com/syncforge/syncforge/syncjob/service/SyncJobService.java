@@ -13,8 +13,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
-import com.syncforge.syncforge.messaging.publisher.SyncJobPublisher;
 import com.syncforge.syncforge.audit.service.AuditLogService;
+import com.syncforge.syncforge.outbox.service.OutboxEventService;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -26,18 +26,18 @@ public class SyncJobService {
 
     private final SyncJobRepository syncJobRepository;
     private final IntegrationRepository integrationRepository;
-    private final SyncJobPublisher syncJobPublisher;
+    private final OutboxEventService outboxEventService;
     private final AuditLogService auditLogService;
 
     public SyncJobService(
             SyncJobRepository syncJobRepository,
             IntegrationRepository integrationRepository,
-            SyncJobPublisher syncJobPublisher,
+            OutboxEventService outboxEventService,
             AuditLogService auditLogService
     ) {
         this.syncJobRepository = syncJobRepository;
         this.integrationRepository = integrationRepository;
-        this.syncJobPublisher= syncJobPublisher;
+        this.outboxEventService= outboxEventService;
         this.auditLogService = auditLogService;
 
     }
@@ -82,11 +82,7 @@ public class SyncJobService {
 
         savedSyncJobs.forEach(syncJob -> {
             auditLogService.logSyncJobCreated(syncJob);
-
-            syncJobPublisher.publishSyncJob(
-                    syncJob.getTenant().getId(),
-                    syncJob.getId()
-            );
+            outboxEventService.createSyncJobCreatedEvent(syncJob);
         });
 
         return savedSyncJobs.stream()
