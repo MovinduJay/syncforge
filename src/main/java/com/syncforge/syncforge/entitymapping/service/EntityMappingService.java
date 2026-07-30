@@ -13,6 +13,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import com.syncforge.syncforge.syncjob.model.SyncJob;
 
 import java.util.List;
 
@@ -22,15 +25,18 @@ public class EntityMappingService {
     private final EntityMappingRepository entityMappingRepository;
     private final TenantRepository tenantRepository;
     private final IntegrationRepository integrationRepository;
+    private final ObjectMapper objectMapper;
 
     public EntityMappingService(
             EntityMappingRepository entityMappingRepository,
             TenantRepository tenantRepository,
-            IntegrationRepository integrationRepository
+            IntegrationRepository integrationRepository,
+            ObjectMapper objectMapper
     ) {
         this.entityMappingRepository = entityMappingRepository;
         this.tenantRepository = tenantRepository;
         this.integrationRepository = integrationRepository;
+        this.objectMapper = objectMapper;
     }
 
     @Transactional
@@ -127,6 +133,70 @@ public class EntityMappingService {
                 .stream()
                 .map(this::toResponse)
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public ResolvedEntityMapping resolveForSyncJob(SyncJob syncJob) {
+
+        String sourceExternalEntityId = extractSourceExternalEntityId(
+                syncJob.getWebhookEvent().getPayloadJson(),
+                syncJob.getEntityType()
+        );
+
+        EntityMapping sourceMapping = entityMappingRepository
+                .findByTenantIdAndIntegrationIdAndEntityTypeAndExternalEntityId(
+                        syncJob.getTenant().getId(),
+                        syncJob.getSourceIntegration().getId(),
+                        syncJob.getEntityType(),
+                        sourceExternalEntityId
+                )
+                .orElseThrow(() -> new IllegalStateException(
+                        "Source entity mapping not found for external ID: " + sourceExternalEntityId
+                ));
+
+        EntityMapping targetMapping = entityMappingRepository
+                .findByTenantIdAndIntegrationIdAndEntityTypeAndCanonicalEntityId(
+                        syncJob.getTenant().getId(),
+                        syncJob.getTargetIntegration().getId(),
+                        syncJob.getEntityType(),
+                        sourceMapping.getCanonicalEntityId()
+                )
+                .orElseThrow(() -> new IllegalStateException(
+                        "Target entity mapping not found for canonical ID: "
+                                + sourceMapping.getCanonicalEntityId()
+                ));
+
+        return new ResolvedEntityMapping(
+                sourceExternalEntityId,
+                targetMapping.getExternalEntityId(),
+                sourceMapping.getCanonicalEntityId()
+        );
+    }
+    private String extractSourceExternalEntityId(
+            String payloadJson,
+            String entityType
+    ) {
+        try {
+            JsonNode rootNode = objectMapper.readTree(payloadJson);
+
+            if ("CUSTOMER".equals(entityType)) {
+                JsonNode customerIdNode = rootNode.get("customerId");
+
+                if (customerIdNode == null || customerIdNode.asText().isBlank()) {
+                    throw new IllegalStateException("customerId is missing from webhook payload");
+                }
+
+                return customerIdNode.asText();
+            }
+
+            throw new IllegalStateException("Unsupported entity type: " + entityType);
+
+        } catch (Exception exception) {
+            throw new IllegalStateException(
+                    "Failed to extract source entity ID from webhook payload",
+                    exception
+            );
+        }
     }
 
     private EntityMappingResponse toResponse(EntityMapping entityMapping) {

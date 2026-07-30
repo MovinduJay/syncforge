@@ -18,6 +18,11 @@ import com.syncforge.syncforge.outbox.service.OutboxEventService;
 import com.syncforge.syncforge.integration.connector.ExternalSystemConnector;
 import com.syncforge.syncforge.integration.connector.IntegrationConnectorRegistry;
 import com.syncforge.syncforge.integration.connector.SyncOperationResult;
+import com.syncforge.syncforge.entitymapping.service.EntityMappingService;
+import com.syncforge.syncforge.entitymapping.service.ResolvedEntityMapping;
+import com.syncforge.syncforge.integration.connector.SyncOperationContext;
+import com.syncforge.syncforge.conflict.service.ConflictEvaluationResult;
+import com.syncforge.syncforge.conflict.service.ConflictRuleEvaluator;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -32,22 +37,25 @@ public class SyncJobService {
     private final OutboxEventService outboxEventService;
     private final AuditLogService auditLogService;
     private final IntegrationConnectorRegistry connectorRegistry;
+    private final EntityMappingService entityMappingService;
+    private final ConflictRuleEvaluator conflictRuleEvaluator;
 
     public SyncJobService(
             SyncJobRepository syncJobRepository,
             IntegrationRepository integrationRepository,
             OutboxEventService outboxEventService,
             AuditLogService auditLogService,
-            IntegrationConnectorRegistry connectorRegistry
-
+            IntegrationConnectorRegistry connectorRegistry,
+            EntityMappingService entityMappingService,
+            ConflictRuleEvaluator conflictRuleEvaluator
     ) {
         this.syncJobRepository = syncJobRepository;
         this.integrationRepository = integrationRepository;
-        this.outboxEventService= outboxEventService;
+        this.outboxEventService = outboxEventService;
         this.auditLogService = auditLogService;
         this.connectorRegistry = connectorRegistry;
-
-
+        this.entityMappingService = entityMappingService;
+        this.conflictRuleEvaluator = conflictRuleEvaluator;
     }
 
     @Transactional
@@ -162,6 +170,14 @@ public class SyncJobService {
         syncJob.markProcessing();
         auditLogService.logSyncJobProcessing(syncJob);
 
+        ConflictEvaluationResult conflictEvaluationResult = conflictRuleEvaluator.evaluate(syncJob);
+
+        if (!conflictEvaluationResult.allowed()) {
+            handleFailedJob(syncJob, conflictEvaluationResult.message());
+            logFailureStatus(syncJob);
+            return toResponse(syncJob);
+        }
+
         if (simulateFailure) {
             handleFailedJob(syncJob, errorMessage);
             logFailureStatus(syncJob);
@@ -173,7 +189,17 @@ public class SyncJobService {
                     syncJob.getTargetIntegration().getType()
             );
 
-            SyncOperationResult result = connector.sync(syncJob);
+            ResolvedEntityMapping resolvedMapping = entityMappingService.resolveForSyncJob(syncJob);
+
+            SyncOperationContext context = new SyncOperationContext(
+                    syncJob,
+                    resolvedMapping.sourceExternalEntityId(),
+                    resolvedMapping.targetExternalEntityId(),
+                    resolvedMapping.canonicalEntityId(),
+                    syncJob.getWebhookEvent().getPayloadJson()
+            );
+
+            SyncOperationResult result = connector.sync(context);
 
             if (result.success()) {
                 syncJob.markSucceeded();

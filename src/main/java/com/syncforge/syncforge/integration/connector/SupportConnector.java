@@ -1,7 +1,6 @@
 package com.syncforge.syncforge.integration.connector;
 
 import com.syncforge.syncforge.integration.model.IntegrationType;
-import com.syncforge.syncforge.syncjob.model.SyncJob;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -13,10 +12,10 @@ public class SupportConnector implements ExternalSystemConnector {
     }
 
     @Override
-    public SyncOperationResult sync(SyncJob syncJob) {
+    public SyncOperationResult sync(SyncOperationContext context) {
         simulateNetworkDelay();
 
-        if (shouldFail(syncJob)) {
+        if (shouldFail(context)) {
             return new SyncOperationResult(
                     false,
                     "Simulated Support API failure"
@@ -25,12 +24,13 @@ public class SupportConnector implements ExternalSystemConnector {
 
         return new SyncOperationResult(
                 true,
-                "Support customer sync completed"
+                "Support customer sync completed for target ID: "
+                        + context.targetExternalEntityId()
         );
     }
 
-    private boolean shouldFail(SyncJob syncJob) {
-        String payloadJson = syncJob.getWebhookEvent().getPayloadJson();
+    private boolean shouldFail(SyncOperationContext context) {
+        String payloadJson = context.payloadJson();
 
         return payloadJson != null
                 && payloadJson.contains("\"failTarget\":\"SUPPORT\"");

@@ -7,5 +7,5 @@ public interface ExternalSystemConnector {
 
     IntegrationType getSupportedType();
 
-    SyncOperationResult sync(SyncJob syncJob);
+    SyncOperationResult sync(SyncOperationContext context);
 }
