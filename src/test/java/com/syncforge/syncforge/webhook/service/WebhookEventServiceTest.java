@@ -27,13 +27,15 @@ class WebhookEventServiceTest {
         TenantRepository tenantRepository = mock(TenantRepository.class);
         SyncJobService syncJobService = mock(SyncJobService.class);
         AuditLogService auditLogService = mock(AuditLogService.class);
+        WebhookEventCreationService webhookEventCreationService = mock(WebhookEventCreationService.class);
 
         WebhookEventService webhookEventService = new WebhookEventService(
                 webhookEventRepository,
                 integrationRepository,
                 tenantRepository,
                 syncJobService,
-                auditLogService
+                auditLogService,
+                webhookEventCreationService
         );
 
         Tenant tenant = mock(Tenant.class);

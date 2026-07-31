@@ -26,22 +26,25 @@ public class WebhookEventService {
     private final TenantRepository tenantRepository;
     private final SyncJobService syncJobService;
     private final AuditLogService auditLogService;
+    private final WebhookEventCreationService webhookEventCreationService;
 
     public WebhookEventService(
             WebhookEventRepository webhookEventRepository,
             IntegrationRepository integrationRepository,
             TenantRepository tenantRepository,
             SyncJobService syncJobService,
-            AuditLogService auditLogService
+            AuditLogService auditLogService,
+            WebhookEventCreationService webhookEventCreationService
     ) {
         this.webhookEventRepository = webhookEventRepository;
         this.integrationRepository = integrationRepository;
         this.tenantRepository = tenantRepository;
         this.syncJobService=syncJobService;
         this.auditLogService=auditLogService;
+        this.webhookEventCreationService = webhookEventCreationService;
+
     }
 
-    @Transactional
     public WebhookEventResponse receiveWebhook(
             Long integrationId,
             ReceiveWebhookRequest request
@@ -99,9 +102,24 @@ public class WebhookEventService {
         );
 
         try {
-            WebhookEvent savedWebhookEvent = webhookEventRepository.saveAndFlush(webhookEvent);
-            auditLogService.logWebhookReceived(savedWebhookEvent);
+            WebhookEvent savedWebhookEvent;
 
+            try {
+                savedWebhookEvent = webhookEventCreationService.saveNewWebhookEvent(webhookEvent);
+            } catch (DataIntegrityViolationException exception) {
+                WebhookEvent existingWebhookEvent = webhookEventRepository
+                        .findByIntegrationIdAndExternalEventId(
+                                integration.getId(),
+                                request.externalEventId()
+                        )
+                        .orElseThrow(() -> exception);
+
+                auditLogService.logWebhookDuplicate(existingWebhookEvent);
+
+                return toResponse(existingWebhookEvent, "DUPLICATE");
+            }
+
+            auditLogService.logWebhookReceived(savedWebhookEvent);
             syncJobService.createJobsForWebhookEvent(savedWebhookEvent);
 
             return toResponse(savedWebhookEvent);
