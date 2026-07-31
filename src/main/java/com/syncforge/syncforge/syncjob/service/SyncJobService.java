@@ -13,8 +13,16 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
-import com.syncforge.syncforge.messaging.publisher.SyncJobPublisher;
 import com.syncforge.syncforge.audit.service.AuditLogService;
+import com.syncforge.syncforge.outbox.service.OutboxEventService;
+import com.syncforge.syncforge.integration.connector.ExternalSystemConnector;
+import com.syncforge.syncforge.integration.connector.IntegrationConnectorRegistry;
+import com.syncforge.syncforge.integration.connector.SyncOperationResult;
+import com.syncforge.syncforge.entitymapping.service.EntityMappingService;
+import com.syncforge.syncforge.entitymapping.service.ResolvedEntityMapping;
+import com.syncforge.syncforge.integration.connector.SyncOperationContext;
+import com.syncforge.syncforge.conflict.service.ConflictEvaluationResult;
+import com.syncforge.syncforge.conflict.service.ConflictRuleEvaluator;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -26,20 +34,28 @@ public class SyncJobService {
 
     private final SyncJobRepository syncJobRepository;
     private final IntegrationRepository integrationRepository;
-    private final SyncJobPublisher syncJobPublisher;
+    private final OutboxEventService outboxEventService;
     private final AuditLogService auditLogService;
+    private final IntegrationConnectorRegistry connectorRegistry;
+    private final EntityMappingService entityMappingService;
+    private final ConflictRuleEvaluator conflictRuleEvaluator;
 
     public SyncJobService(
             SyncJobRepository syncJobRepository,
             IntegrationRepository integrationRepository,
-            SyncJobPublisher syncJobPublisher,
-            AuditLogService auditLogService
+            OutboxEventService outboxEventService,
+            AuditLogService auditLogService,
+            IntegrationConnectorRegistry connectorRegistry,
+            EntityMappingService entityMappingService,
+            ConflictRuleEvaluator conflictRuleEvaluator
     ) {
         this.syncJobRepository = syncJobRepository;
         this.integrationRepository = integrationRepository;
-        this.syncJobPublisher= syncJobPublisher;
+        this.outboxEventService = outboxEventService;
         this.auditLogService = auditLogService;
-
+        this.connectorRegistry = connectorRegistry;
+        this.entityMappingService = entityMappingService;
+        this.conflictRuleEvaluator = conflictRuleEvaluator;
     }
 
     @Transactional
@@ -82,11 +98,7 @@ public class SyncJobService {
 
         savedSyncJobs.forEach(syncJob -> {
             auditLogService.logSyncJobCreated(syncJob);
-
-            syncJobPublisher.publishSyncJob(
-                    syncJob.getTenant().getId(),
-                    syncJob.getId()
-            );
+            outboxEventService.createSyncJobCreatedEvent(syncJob);
         });
 
         return savedSyncJobs.stream()
@@ -158,21 +170,62 @@ public class SyncJobService {
         syncJob.markProcessing();
         auditLogService.logSyncJobProcessing(syncJob);
 
-        if (simulateFailure) {
-            handleFailedJob(syncJob, errorMessage);
+        ConflictEvaluationResult conflictEvaluationResult = conflictRuleEvaluator.evaluate(syncJob);
 
-            if (syncJob.getStatus() == SyncJobStatus.DEAD_LETTER) {
-                auditLogService.logSyncJobDeadLetter(syncJob);
-            } else {
-                auditLogService.logSyncJobFailed(syncJob);
-            }
-        } else {
-            syncJob.markSucceeded();
-            auditLogService.logSyncJobSucceeded(syncJob);
+        if (!conflictEvaluationResult.allowed()) {
+            handleFailedJob(syncJob, conflictEvaluationResult.message());
+            logFailureStatus(syncJob);
+            return toResponse(syncJob);
         }
 
-        return toResponse(syncJob);
+        if (simulateFailure) {
+            handleFailedJob(syncJob, errorMessage);
+            logFailureStatus(syncJob);
+            return toResponse(syncJob);
+        }
+
+        try {
+            ExternalSystemConnector connector = connectorRegistry.getConnector(
+                    syncJob.getTargetIntegration().getType()
+            );
+
+            ResolvedEntityMapping resolvedMapping = entityMappingService.resolveForSyncJob(syncJob);
+
+            SyncOperationContext context = new SyncOperationContext(
+                    syncJob,
+                    resolvedMapping.sourceExternalEntityId(),
+                    resolvedMapping.targetExternalEntityId(),
+                    resolvedMapping.canonicalEntityId(),
+                    syncJob.getWebhookEvent().getPayloadJson()
+            );
+
+            SyncOperationResult result = connector.sync(context);
+
+            if (result.success()) {
+                syncJob.markSucceeded();
+                auditLogService.logSyncJobSucceeded(syncJob);
+            } else {
+                handleFailedJob(syncJob, result.message());
+                logFailureStatus(syncJob);
+            }
+
+            return toResponse(syncJob);
+
+        } catch (Exception exception) {
+            handleFailedJob(syncJob, resolveErrorMessage(String.valueOf(exception)));
+            logFailureStatus(syncJob);
+            return toResponse(syncJob);
+        }
     }
+
+    private void logFailureStatus(SyncJob syncJob) {
+        if (syncJob.getStatus() == SyncJobStatus.DEAD_LETTER) {
+            auditLogService.logSyncJobDeadLetter(syncJob);
+        } else {
+            auditLogService.logSyncJobFailed(syncJob);
+        }
+    }
+
 
     @Transactional(readOnly = true)
     public List<SyncJobResponse> getSyncJobsByTenant(Long tenantId) {
@@ -197,6 +250,16 @@ public class SyncJobService {
         LocalDateTime nextRetryAt = LocalDateTime.now().plusMinutes(5);
 
         syncJob.markFailed(finalErrorMessage, nextRetryAt);
+    }
+
+    private String resolveErrorMessage(Exception exception) {
+        String message = exception.getMessage();
+
+        if (message == null || message.isBlank()) {
+            return exception.getClass().getSimpleName();
+        }
+
+        return message;
     }
 
     private String resolveErrorMessage(String errorMessage) {
