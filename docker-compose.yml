@@ -1,0 +1,31 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: syncforge-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: syncforge_db
+      MYSQL_USER: syncforge_user
+      MYSQL_PASSWORD: syncforge_password
+      MYSQL_ROOT_PASSWORD: root_password
+    ports:
+      - "3307:3306"
+    volumes:
+      - syncforge_mysql_data:/var/lib/mysql
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: syncforge-rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: syncforge
+      RABBITMQ_DEFAULT_PASS: syncforge
+    ports:
+      - "5673:5672"
+      - "15673:15672"
+    volumes:
+      - syncforge_rabbitmq_data:/var/lib/rabbitmq
+
+volumes:
+  syncforge_mysql_data:
+  syncforge_rabbitmq_data:
