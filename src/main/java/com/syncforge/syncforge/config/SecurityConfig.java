@@ -4,6 +4,7 @@ import com.syncforge.syncforge.auth.security.JwtAuthenticationFilter;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -38,6 +39,22 @@ public class SecurityConfig {
                                 "/actuator/health",
                                 "/error"
                         ).permitAll()
+
+                        .requestMatchers(HttpMethod.GET, "/api/**")
+                        .hasAnyRole("ADMIN", "VIEWER")
+
+                        .requestMatchers(HttpMethod.POST, "/api/**")
+                        .hasRole("ADMIN")
+
+                        .requestMatchers(HttpMethod.PUT, "/api/**")
+                        .hasRole("ADMIN")
+
+                        .requestMatchers(HttpMethod.PATCH, "/api/**")
+                        .hasRole("ADMIN")
+
+                        .requestMatchers(HttpMethod.DELETE, "/api/**")
+                        .hasRole("ADMIN")
+
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(exception -> exception
