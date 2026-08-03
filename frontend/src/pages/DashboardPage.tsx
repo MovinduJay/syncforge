@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getIntegrations } from "../api/integrationApi";
 import { getCurrentTenant } from "../api/tenantApi";
 import { useAuth } from "../auth/AuthContext";
+import { TestWebhookPanel } from "../components/TestWebhookPanel";
 
 export function DashboardPage() {
     const { user, accessToken } = useAuth();
@@ -25,6 +26,7 @@ export function DashboardPage() {
     );
 
     return (
+
         <main className="dashboard-page">
             <section className="dashboard-header">
                 <div>
@@ -98,6 +100,9 @@ export function DashboardPage() {
                     ))}
                 </div>
             </section>
+            {accessToken && integrations.length > 0 && (
+                <TestWebhookPanel integrations={integrations} accessToken={accessToken} />
+            )}
         </main>
     );
 }

@@ -16,15 +16,18 @@ export function AppLayout() {
                 <nav className="nav">
                     <NavLink to="/dashboard">Dashboard</NavLink>
                     <NavLink to="/integrations">Integrations</NavLink>
+                    <NavLink to="/webhook-events">Webhook Events</NavLink>
                     <NavLink to="/sync-jobs">Sync Jobs</NavLink>
                     <NavLink to="/audit-logs">Audit Logs</NavLink>
+                    <NavLink to="/entity-mappings">Entity Mappings</NavLink>
+                    <NavLink to="/conflict-rules">Conflict Rules</NavLink>
                 </nav>
 
                 <button onClick={logout}>Logout</button>
             </aside>
 
             <div className="content">
-                <Outlet />
+                <Outlet/>
             </div>
         </div>
     );
