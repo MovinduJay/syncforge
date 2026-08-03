@@ -50,6 +50,17 @@ services:
       rabbitmq:
         condition: service_healthy
 
+  syncforge-frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: syncforge-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - syncforge-api
+
 volumes:
   syncforge_mysql_data:
   syncforge_rabbitmq_data:
