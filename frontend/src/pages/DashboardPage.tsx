@@ -100,8 +100,21 @@ export function DashboardPage() {
                     ))}
                 </div>
             </section>
-            {accessToken && integrations.length > 0 && (
+            {user?.role === "ADMIN" && accessToken && integrations.length > 0 && (
                 <TestWebhookPanel integrations={integrations} accessToken={accessToken} />
+            )}
+
+            {user?.role === "VIEWER" && (
+                <section className="section">
+                    <div className="viewer-notice">
+                        <p className="eyebrow">Read-only Access</p>
+                        <h2>Viewer Mode</h2>
+                        <p className="muted">
+                            You can monitor tenants, integrations, webhook events, sync jobs, and audit logs,
+                            but admin-only actions such as sending test webhooks are hidden.
+                        </p>
+                    </div>
+                </section>
             )}
         </main>
     );

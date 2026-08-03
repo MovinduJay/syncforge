@@ -10,7 +10,9 @@ export function AppLayout() {
                 <div>
                     <p className="eyebrow">SyncForge</p>
                     <p className="sidebar-user">{user?.email}</p>
-                    <p className="sidebar-role">{user?.role}</p>
+                    <p className={`sidebar-role role-${user?.role?.toLowerCase()}`}>
+                        {user?.role}
+                    </p>
                 </div>
 
                 <nav className="nav">
