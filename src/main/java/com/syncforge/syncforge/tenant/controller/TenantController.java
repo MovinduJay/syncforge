@@ -1,5 +1,6 @@
 package com.syncforge.syncforge.tenant.controller;
 
+import com.syncforge.syncforge.auth.service.CurrentUserService;
 import com.syncforge.syncforge.tenant.dto.CreateTenantRequest;
 import com.syncforge.syncforge.tenant.dto.TenantResponse;
 import com.syncforge.syncforge.tenant.service.TenantService;
@@ -13,9 +14,14 @@ import java.util.List;
 public class TenantController {
 
     private final TenantService tenantService;
+    private final CurrentUserService currentUserService;
 
-    public TenantController(TenantService tenantService) {
+    public TenantController(
+            TenantService tenantService,
+            CurrentUserService currentUserService
+    ) {
         this.tenantService = tenantService;
+        this.currentUserService = currentUserService;
     }
 
     @PostMapping
@@ -24,7 +30,8 @@ public class TenantController {
     }
 
     @GetMapping
-    public List<TenantResponse> getAllTenants() {
-        return tenantService.getAllTenants();
+    public List<TenantResponse> getCurrentTenant() {
+        Long currentTenantId = currentUserService.getCurrentTenantId();
+        return List.of(tenantService.getTenantById(currentTenantId));
     }
 }

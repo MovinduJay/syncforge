@@ -1,5 +1,6 @@
 package com.syncforge.syncforge.syncjob.controller;
 
+import com.syncforge.syncforge.auth.service.TenantAccessService;
 import com.syncforge.syncforge.syncjob.dto.ProcessSyncJobRequest;
 import com.syncforge.syncforge.syncjob.dto.SyncJobResponse;
 import com.syncforge.syncforge.syncjob.service.SyncJobService;
@@ -12,15 +13,21 @@ import java.util.List;
 public class SyncJobController {
 
     private final SyncJobService syncJobService;
+    private final TenantAccessService tenantAccessService;
 
-    public SyncJobController(SyncJobService syncJobService) {
+    public SyncJobController(
+            SyncJobService syncJobService,
+            TenantAccessService tenantAccessService
+    ) {
         this.syncJobService = syncJobService;
+        this.tenantAccessService = tenantAccessService;
     }
 
     @GetMapping
     public List<SyncJobResponse> getSyncJobsByTenant(
             @PathVariable Long tenantId
     ) {
+        tenantAccessService.requireCurrentTenant(tenantId);
         return syncJobService.getSyncJobsByTenant(tenantId);
     }
 
@@ -30,6 +37,7 @@ public class SyncJobController {
             @PathVariable Long jobId,
             @RequestBody ProcessSyncJobRequest request
     ) {
+        tenantAccessService.requireCurrentTenant(tenantId);
         return syncJobService.processSyncJob(tenantId, jobId, request);
     }
 }
