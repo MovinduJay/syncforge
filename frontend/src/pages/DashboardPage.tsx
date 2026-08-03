@@ -4,7 +4,7 @@ import { getCurrentTenant } from "../api/tenantApi";
 import { useAuth } from "../auth/AuthContext";
 
 export function DashboardPage() {
-    const { user, accessToken, logout } = useAuth();
+    const { user, accessToken } = useAuth();
 
     const tenantQuery = useQuery({
         queryKey: ["current-tenant"],
@@ -35,7 +35,6 @@ export function DashboardPage() {
                     </p>
                 </div>
 
-                <button onClick={logout}>Logout</button>
             </section>
 
             {tenantQuery.isLoading && <p className="muted">Loading dashboard...</p>}
