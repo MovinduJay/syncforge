@@ -47,6 +47,7 @@ services:
     environment:
       SYNCFORGE_SECURITY_JWT_SECRET: "ci-local-dev-secret-key-12345678901234567890"
       SYNCFORGE_SECURITY_JWT_ACCESS_TOKEN_MINUTES: "15"
+      SYNCFORGE_SECURITY_REFRESH_TOKEN_DAYS: "7"
     depends_on:
       mysql:
         condition: service_healthy
