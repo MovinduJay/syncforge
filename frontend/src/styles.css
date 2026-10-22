@@ -30,6 +30,13 @@ button:disabled {
     cursor: not-allowed;
 }
 
+.secondary-button {
+    border: 1px solid #38bdf8;
+    background: transparent;
+    color: #7dd3fc;
+    white-space: nowrap;
+}
+
 input {
     width: 100%;
     margin-top: 8px;
@@ -221,6 +228,10 @@ h2 {
     margin: 0 0 12px auto;
     color: #94a3b8;
     white-space: nowrap;
+}
+
+.table-toolbar .secondary-button {
+    margin-bottom: 2px;
 }
 
 .empty-state {

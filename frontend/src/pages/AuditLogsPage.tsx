@@ -3,6 +3,7 @@ import { useState } from "react";
 import { getAuditLogs } from "../api/auditLogApi";
 import { useAuth } from "../auth/AuthContext";
 import type { AuditAction } from "../types/auditLog";
+import { downloadCsv } from "../utils/downloadCsv";
 
 function getActionClass(action: AuditAction) {
     if (action.includes("SUCCEEDED")) {
@@ -61,6 +62,21 @@ export function AuditLogsPage() {
     const failureLogs = auditLogs.filter(
         (log) => log.action.includes("FAILED") || log.action.includes("DEAD_LETTER")
     ).length;
+
+    function exportLogs() {
+        downloadCsv(
+            `syncforge-audit-logs-${new Date().toISOString().slice(0, 10)}.csv`,
+            ["ID", "Action", "Message", "Webhook Event ID", "Sync Job ID", "Created At"],
+            filteredLogs.map((log) => [
+                log.id,
+                log.action,
+                log.message,
+                log.webhookEventId,
+                log.syncJobId,
+                log.createdAt,
+            ]),
+        );
+    }
 
     return (
         <main>
@@ -126,6 +142,14 @@ export function AuditLogsPage() {
                     </select>
                 </label>
                 <p className="toolbar-summary">Showing {filteredLogs.length} of {auditLogs.length} logs</p>
+                <button
+                    type="button"
+                    className="secondary-button"
+                    disabled={filteredLogs.length === 0}
+                    onClick={exportLogs}
+                >
+                    Export CSV
+                </button>
             </section>
 
             <section className="table-card">
