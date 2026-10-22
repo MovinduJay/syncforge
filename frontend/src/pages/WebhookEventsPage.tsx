@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { getWebhookEvents } from "../api/webhookEventApi";
 import { useAuth } from "../auth/AuthContext";
 import type { WebhookEventStatus } from "../types/webhookEvent";
@@ -18,6 +19,8 @@ function getStatusClass(status: WebhookEventStatus) {
 
 export function WebhookEventsPage() {
     const { user, accessToken } = useAuth();
+    const [search, setSearch] = useState("");
+    const [statusFilter, setStatusFilter] = useState<WebhookEventStatus | "ALL">("ALL");
 
     const webhookEventsQuery = useQuery({
         queryKey: ["webhook-events", user?.tenantId],
@@ -27,6 +30,18 @@ export function WebhookEventsPage() {
     });
 
     const webhookEvents = webhookEventsQuery.data ?? [];
+    const normalizedSearch = search.trim().toLowerCase();
+    const filteredEvents = webhookEvents.filter((event) => {
+        const matchesStatus = statusFilter === "ALL" || event.status === statusFilter;
+        const matchesSearch = !normalizedSearch || [
+            event.id,
+            event.integrationId,
+            event.externalEventId,
+            event.eventType,
+        ].some((value) => String(value).toLowerCase().includes(normalizedSearch));
+
+        return matchesStatus && matchesSearch;
+    });
 
     const receivedCount = webhookEvents.filter(
         (event) => event.status === "RECEIVED"
@@ -83,6 +98,32 @@ export function WebhookEventsPage() {
                 <p className="error">Failed to load webhook events.</p>
             )}
 
+            <section className="table-toolbar" aria-label="Webhook event filters">
+                <label className="toolbar-field">
+                    <span>Search</span>
+                    <input
+                        type="search"
+                        placeholder="Event ID, type, or integration"
+                        value={search}
+                        onChange={(event) => setSearch(event.target.value)}
+                    />
+                </label>
+                <label className="toolbar-field">
+                    <span>Status</span>
+                    <select
+                        value={statusFilter}
+                        onChange={(event) => setStatusFilter(event.target.value as WebhookEventStatus | "ALL")}
+                    >
+                        <option value="ALL">All statuses</option>
+                        <option value="RECEIVED">Received</option>
+                        <option value="PROCESSED">Processed</option>
+                        <option value="DUPLICATE">Duplicate</option>
+                        <option value="FAILED">Failed</option>
+                    </select>
+                </label>
+                <p className="toolbar-summary">Showing {filteredEvents.length} of {webhookEvents.length} events</p>
+            </section>
+
             <section className="table-card">
                 <table>
                     <thead>
@@ -98,7 +139,7 @@ export function WebhookEventsPage() {
                     </thead>
 
                     <tbody>
-                    {webhookEvents.map((event) => (
+                    {filteredEvents.map((event) => (
                         <tr key={event.id}>
                             <td>{event.id}</td>
                             <td>{event.integrationId}</td>
@@ -117,6 +158,9 @@ export function WebhookEventsPage() {
                             </td>
                         </tr>
                     ))}
+                    {filteredEvents.length === 0 && !webhookEventsQuery.isLoading && (
+                        <tr><td colSpan={7} className="empty-state">No webhook events match these filters.</td></tr>
+                    )}
                     </tbody>
                 </table>
             </section>
