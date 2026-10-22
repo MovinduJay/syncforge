@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { getAuditLogs } from "../api/auditLogApi";
 import { useAuth } from "../auth/AuthContext";
 import type { AuditAction } from "../types/auditLog";
@@ -21,6 +22,8 @@ function getActionClass(action: AuditAction) {
 
 export function AuditLogsPage() {
     const { user, accessToken } = useAuth();
+    const [search, setSearch] = useState("");
+    const [category, setCategory] = useState<"ALL" | "WEBHOOK" | "SYNC_JOB" | "FAILURE">("ALL");
 
     const auditLogsQuery = useQuery({
         queryKey: ["audit-logs", user?.tenantId],
@@ -30,6 +33,22 @@ export function AuditLogsPage() {
     });
 
     const auditLogs = auditLogsQuery.data ?? [];
+    const normalizedSearch = search.trim().toLowerCase();
+    const filteredLogs = auditLogs.filter((log) => {
+        const matchesCategory = category === "ALL"
+            || (category === "WEBHOOK" && log.action.startsWith("WEBHOOK"))
+            || (category === "SYNC_JOB" && log.action.startsWith("SYNC_JOB"))
+            || (category === "FAILURE" && (log.action.includes("FAILED") || log.action.includes("DEAD_LETTER")));
+        const matchesSearch = !normalizedSearch || [
+            log.id,
+            log.action,
+            log.message,
+            log.webhookEventId,
+            log.syncJobId,
+        ].some((value) => String(value ?? "").toLowerCase().includes(normalizedSearch));
+
+        return matchesCategory && matchesSearch;
+    });
 
     const webhookLogs = auditLogs.filter((log) =>
         log.action.startsWith("WEBHOOK")
@@ -84,6 +103,31 @@ export function AuditLogsPage() {
                 <p className="error">Failed to load audit logs.</p>
             )}
 
+            <section className="table-toolbar" aria-label="Audit log filters">
+                <label className="toolbar-field">
+                    <span>Search</span>
+                    <input
+                        type="search"
+                        placeholder="Action, message, webhook, or job"
+                        value={search}
+                        onChange={(event) => setSearch(event.target.value)}
+                    />
+                </label>
+                <label className="toolbar-field">
+                    <span>Category</span>
+                    <select
+                        value={category}
+                        onChange={(event) => setCategory(event.target.value as typeof category)}
+                    >
+                        <option value="ALL">All activity</option>
+                        <option value="WEBHOOK">Webhooks</option>
+                        <option value="SYNC_JOB">Sync jobs</option>
+                        <option value="FAILURE">Failures</option>
+                    </select>
+                </label>
+                <p className="toolbar-summary">Showing {filteredLogs.length} of {auditLogs.length} logs</p>
+            </section>
+
             <section className="table-card">
                 <table>
                     <thead>
@@ -98,7 +142,7 @@ export function AuditLogsPage() {
                     </thead>
 
                     <tbody>
-                    {auditLogs.map((log) => (
+                    {filteredLogs.map((log) => (
                         <tr key={log.id}>
                             <td>{log.id}</td>
                             <td>
@@ -112,6 +156,9 @@ export function AuditLogsPage() {
                             <td>{new Date(log.createdAt).toLocaleString()}</td>
                         </tr>
                     ))}
+                    {filteredLogs.length === 0 && !auditLogsQuery.isLoading && (
+                        <tr><td colSpan={6} className="empty-state">No audit logs match these filters.</td></tr>
+                    )}
                     </tbody>
                 </table>
             </section>
