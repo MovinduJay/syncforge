@@ -1,5 +1,6 @@
 import {
     createContext,
+    useCallback,
     useContext,
     useEffect,
     useMemo,
@@ -106,7 +107,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         storedAuth?.refreshToken ?? null
     );
 
-    async function login(email: string, password: string) {
+    const login = useCallback(async (email: string, password: string) => {
         const response = await loginApi(email, password);
 
         const currentUser = buildCurrentUser(response);
@@ -120,9 +121,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             accessToken: response.accessToken,
             refreshToken: response.refreshToken,
         });
-    }
+    }, []);
 
-    async function refreshSession() {
+    const refreshSession = useCallback(async () => {
         if (!refreshToken) {
             return;
         }
@@ -146,9 +147,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setRefreshToken(null);
             clearStoredAuth();
         }
-    }
+    }, [refreshToken]);
 
-    async function logout() {
+    const logout = useCallback(async () => {
         if (refreshToken) {
             await logoutApi(refreshToken);
         }
@@ -157,7 +158,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setAccessToken(null);
         setRefreshToken(null);
         clearStoredAuth();
-    }
+    }, [refreshToken]);
 
     useEffect(() => {
         if (!accessToken || !refreshToken) {
@@ -180,7 +181,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return () => {
             window.clearTimeout(timeoutId);
         };
-    }, [accessToken, refreshToken]);
+    }, [accessToken, refreshToken, refreshSession]);
 
     const value = useMemo(
         () => ({
@@ -191,7 +192,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             login,
             logout,
         }),
-        [user, accessToken, refreshToken]
+        [user, accessToken, refreshToken, login, logout]
     );
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
