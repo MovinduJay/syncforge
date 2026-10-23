@@ -20,7 +20,7 @@ export function LoginPage() {
         try {
             await login(email, password);
             navigate("/dashboard");
-        } catch (exception) {
+        } catch {
             setError("Invalid email or password");
         } finally {
             setIsLoading(false);
