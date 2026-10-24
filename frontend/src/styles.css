@@ -10,7 +10,8 @@ body {
 }
 
 button,
-input {
+input,
+select {
     font: inherit;
 }
 
@@ -29,7 +30,24 @@ button:disabled {
     cursor: not-allowed;
 }
 
+.secondary-button {
+    border: 1px solid #38bdf8;
+    background: transparent;
+    color: #7dd3fc;
+    white-space: nowrap;
+}
+
 input {
+    width: 100%;
+    margin-top: 8px;
+    border: 1px solid #334155;
+    border-radius: 10px;
+    padding: 12px;
+    background: #020617;
+    color: #e5e7eb;
+}
+
+select {
     width: 100%;
     margin-top: 8px;
     border: 1px solid #334155;
@@ -188,6 +206,40 @@ h2 {
     background: #111827;
 }
 
+.table-toolbar {
+    display: flex;
+    align-items: end;
+    gap: 16px;
+    margin-bottom: 16px;
+    padding: 16px;
+    border: 1px solid #1e293b;
+    border-radius: 14px;
+    background: #111827;
+}
+
+.toolbar-field {
+    flex: 1 1 220px;
+    margin: 0;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.toolbar-summary {
+    margin: 0 0 12px auto;
+    color: #94a3b8;
+    white-space: nowrap;
+}
+
+.table-toolbar .secondary-button {
+    margin-bottom: 2px;
+}
+
+.empty-state {
+    padding: 32px;
+    color: #94a3b8;
+    text-align: center;
+}
+
 table {
     width: 100%;
     border-collapse: collapse;
@@ -223,6 +275,15 @@ tr:last-child td {
 
     .content {
         padding: 20px;
+    }
+
+    .table-toolbar {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .toolbar-summary {
+        margin: 0;
     }
 }
 

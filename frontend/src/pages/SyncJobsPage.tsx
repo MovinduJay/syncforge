@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { getSyncJobs } from "../api/syncJobApi";
 import { useAuth } from "../auth/AuthContext";
 import type { SyncJobStatus } from "../types/syncJob";
@@ -20,6 +21,8 @@ function getStatusClass(status: SyncJobStatus) {
 
 export function SyncJobsPage() {
     const { user, accessToken } = useAuth();
+    const [search, setSearch] = useState("");
+    const [statusFilter, setStatusFilter] = useState<SyncJobStatus | "ALL">("ALL");
 
     const syncJobsQuery = useQuery({
         queryKey: ["sync-jobs", user?.tenantId],
@@ -29,6 +32,19 @@ export function SyncJobsPage() {
     });
 
     const syncJobs = syncJobsQuery.data ?? [];
+    const normalizedSearch = search.trim().toLowerCase();
+    const filteredJobs = syncJobs.filter((job) => {
+        const matchesStatus = statusFilter === "ALL" || job.status === statusFilter;
+        const matchesSearch = !normalizedSearch || [
+            job.id,
+            job.webhookEventId,
+            job.entityType,
+            job.operationType,
+            job.lastError,
+        ].some((value) => String(value ?? "").toLowerCase().includes(normalizedSearch));
+
+        return matchesStatus && matchesSearch;
+    });
 
     const totalJobs = syncJobs.length;
     const succeededJobs = syncJobs.filter((job) => job.status === "SUCCEEDED").length;
@@ -79,6 +95,33 @@ export function SyncJobsPage() {
                 <p className="error">Failed to load sync jobs.</p>
             )}
 
+            <section className="table-toolbar" aria-label="Sync job filters">
+                <label className="toolbar-field">
+                    <span>Search</span>
+                    <input
+                        type="search"
+                        placeholder="ID, entity, operation, or error"
+                        value={search}
+                        onChange={(event) => setSearch(event.target.value)}
+                    />
+                </label>
+                <label className="toolbar-field">
+                    <span>Status</span>
+                    <select
+                        value={statusFilter}
+                        onChange={(event) => setStatusFilter(event.target.value as SyncJobStatus | "ALL")}
+                    >
+                        <option value="ALL">All statuses</option>
+                        <option value="PENDING">Pending</option>
+                        <option value="PROCESSING">Processing</option>
+                        <option value="SUCCEEDED">Succeeded</option>
+                        <option value="FAILED">Failed</option>
+                        <option value="DEAD_LETTER">Dead letter</option>
+                    </select>
+                </label>
+                <p className="toolbar-summary">Showing {filteredJobs.length} of {syncJobs.length} jobs</p>
+            </section>
+
             <section className="table-card">
                 <table>
                     <thead>
@@ -95,7 +138,7 @@ export function SyncJobsPage() {
                     </thead>
 
                     <tbody>
-                    {syncJobs.map((job) => (
+                    {filteredJobs.map((job) => (
                         <tr key={job.id}>
                             <td>{job.id}</td>
                             <td>{job.webhookEventId}</td>
@@ -111,6 +154,9 @@ export function SyncJobsPage() {
                             <td>{new Date(job.createdAt).toLocaleString()}</td>
                         </tr>
                     ))}
+                    {filteredJobs.length === 0 && !syncJobsQuery.isLoading && (
+                        <tr><td colSpan={8} className="empty-state">No sync jobs match these filters.</td></tr>
+                    )}
                     </tbody>
                 </table>
             </section>
