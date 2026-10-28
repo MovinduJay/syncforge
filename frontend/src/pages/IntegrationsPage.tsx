@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { getIntegrations } from "../api/integrationApi";
 import { useAuth } from "../auth/useAuth";
+import { formatDateTime } from "../utils/formatDateTime";
 
 export function IntegrationsPage() {
     const { user, accessToken } = useAuth();
@@ -97,7 +98,7 @@ export function IntegrationsPage() {
                             </td>
                             <td>{integration.displayName}</td>
                             <td>{integration.status}</td>
-                            <td>{new Date(integration.createdAt).toLocaleString()}</td>
+                            <td>{formatDateTime(integration.createdAt)}</td>
                         </tr>
                     ))}
                     {filteredIntegrations.length === 0 && !integrationsQuery.isLoading && (

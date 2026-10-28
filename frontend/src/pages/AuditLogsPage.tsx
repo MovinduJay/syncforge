@@ -4,6 +4,7 @@ import { getAuditLogs } from "../api/auditLogApi";
 import { useAuth } from "../auth/useAuth";
 import { downloadCsv } from "../utils/downloadCsv";
 import { getStatusClass } from "../utils/statusClass";
+import { formatDateTime } from "../utils/formatDateTime";
 
 export function AuditLogsPage() {
     const { user, accessToken } = useAuth();
@@ -161,7 +162,7 @@ export function AuditLogsPage() {
                             <td>{log.message}</td>
                             <td>{log.webhookEventId ?? "-"}</td>
                             <td>{log.syncJobId ?? "-"}</td>
-                            <td>{new Date(log.createdAt).toLocaleString()}</td>
+                            <td>{formatDateTime(log.createdAt)}</td>
                         </tr>
                     ))}
                     {filteredLogs.length === 0 && !auditLogsQuery.isLoading && (

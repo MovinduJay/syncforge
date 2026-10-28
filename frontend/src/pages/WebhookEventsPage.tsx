@@ -4,6 +4,7 @@ import { getWebhookEvents } from "../api/webhookEventApi";
 import { useAuth } from "../auth/useAuth";
 import type { WebhookEventStatus } from "../types/webhookEvent";
 import { getStatusClass } from "../utils/statusClass";
+import { formatDateTime } from "../utils/formatDateTime";
 
 export function WebhookEventsPage() {
     const { user, accessToken } = useAuth();
@@ -138,12 +139,8 @@ export function WebhookEventsPage() {
                     {event.status}
                   </span>
                             </td>
-                            <td>{new Date(event.receivedAt).toLocaleString()}</td>
-                            <td>
-                                {event.processedAt
-                                    ? new Date(event.processedAt).toLocaleString()
-                                    : "-"}
-                            </td>
+                            <td>{formatDateTime(event.receivedAt)}</td>
+                            <td>{formatDateTime(event.processedAt)}</td>
                         </tr>
                     ))}
                     {filteredEvents.length === 0 && !webhookEventsQuery.isLoading && (

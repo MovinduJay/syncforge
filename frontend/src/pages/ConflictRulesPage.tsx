@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { getConflictRules } from "../api/conflictRuleApi";
 import { useAuth } from "../auth/useAuth";
+import { formatDateTime } from "../utils/formatDateTime";
 import type { ConflictStrategy } from "../types/conflictRule";
 
 function getStrategyClass(strategy: ConflictStrategy) {
@@ -109,7 +110,7 @@ export function ConflictRulesPage() {
                   </span>
                             </td>
                             <td>{rule.active ? "ACTIVE" : "INACTIVE"}</td>
-                            <td>{new Date(rule.createdAt).toLocaleString()}</td>
+                            <td>{formatDateTime(rule.createdAt)}</td>
                         </tr>
                     ))}
                     </tbody>

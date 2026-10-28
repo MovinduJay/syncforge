@@ -4,6 +4,7 @@ import { getSyncJobs } from "../api/syncJobApi";
 import { useAuth } from "../auth/useAuth";
 import type { SyncJobStatus } from "../types/syncJob";
 import { getStatusClass } from "../utils/statusClass";
+import { formatDateTime } from "../utils/formatDateTime";
 
 export function SyncJobsPage() {
     const { user, accessToken } = useAuth();
@@ -137,7 +138,7 @@ export function SyncJobsPage() {
                             </td>
                             <td>{job.attemptCount}</td>
                             <td>{job.lastError ?? "-"}</td>
-                            <td>{new Date(job.createdAt).toLocaleString()}</td>
+                            <td>{formatDateTime(job.createdAt)}</td>
                         </tr>
                     ))}
                     {filteredJobs.length === 0 && !syncJobsQuery.isLoading && (
