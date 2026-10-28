@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { getIntegrations } from "../api/integrationApi";
-import { useAuth } from "../auth/AuthContext";
+import { useAuth } from "../auth/useAuth";
 
 export function IntegrationsPage() {
     const { user, accessToken } = useAuth();

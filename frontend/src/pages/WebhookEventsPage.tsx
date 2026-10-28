@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { getWebhookEvents } from "../api/webhookEventApi";
-import { useAuth } from "../auth/AuthContext";
+import { useAuth } from "../auth/useAuth";
 import type { WebhookEventStatus } from "../types/webhookEvent";
 
 function getStatusClass(status: WebhookEventStatus) {

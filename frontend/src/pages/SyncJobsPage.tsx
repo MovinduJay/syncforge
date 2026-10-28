@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { getSyncJobs } from "../api/syncJobApi";
-import { useAuth } from "../auth/AuthContext";
+import { useAuth } from "../auth/useAuth";
 import type { SyncJobStatus } from "../types/syncJob";
 
 function getStatusClass(status: SyncJobStatus) {

@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { getAuditLogs } from "../api/auditLogApi";
-import { useAuth } from "../auth/AuthContext";
+import { useAuth } from "../auth/useAuth";
 import type { AuditAction } from "../types/auditLog";
 import { downloadCsv } from "../utils/downloadCsv";
 

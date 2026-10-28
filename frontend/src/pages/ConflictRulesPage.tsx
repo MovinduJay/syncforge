@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { getConflictRules } from "../api/conflictRuleApi";
-import { useAuth } from "../auth/AuthContext";
+import { useAuth } from "../auth/useAuth";
 import type { ConflictStrategy } from "../types/conflictRule";
 
 function getStrategyClass(strategy: ConflictStrategy) {

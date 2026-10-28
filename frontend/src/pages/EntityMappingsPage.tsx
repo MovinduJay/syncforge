@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { getEntityMappings } from "../api/entityMappingApi";
-import { useAuth } from "../auth/AuthContext";
+import { useAuth } from "../auth/useAuth";
 
 export function EntityMappingsPage() {
   const { user, accessToken } = useAuth();
