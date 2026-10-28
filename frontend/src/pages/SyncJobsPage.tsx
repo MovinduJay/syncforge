@@ -3,21 +3,7 @@ import { useState } from "react";
 import { getSyncJobs } from "../api/syncJobApi";
 import { useAuth } from "../auth/useAuth";
 import type { SyncJobStatus } from "../types/syncJob";
-
-function getStatusClass(status: SyncJobStatus) {
-    switch (status) {
-        case "SUCCEEDED":
-            return "status status-success";
-        case "FAILED":
-            return "status status-failed";
-        case "DEAD_LETTER":
-            return "status status-dead";
-        case "PROCESSING":
-            return "status status-processing";
-        default:
-            return "status";
-    }
-}
+import { getStatusClass } from "../utils/statusClass";
 
 export function SyncJobsPage() {
     const { user, accessToken } = useAuth();

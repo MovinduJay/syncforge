@@ -3,19 +3,7 @@ import { useState } from "react";
 import { getWebhookEvents } from "../api/webhookEventApi";
 import { useAuth } from "../auth/useAuth";
 import type { WebhookEventStatus } from "../types/webhookEvent";
-
-function getStatusClass(status: WebhookEventStatus) {
-    switch (status) {
-        case "PROCESSED":
-            return "status status-success";
-        case "FAILED":
-            return "status status-failed";
-        case "DUPLICATE":
-            return "status status-processing";
-        default:
-            return "status";
-    }
-}
+import { getStatusClass } from "../utils/statusClass";
 
 export function WebhookEventsPage() {
     const { user, accessToken } = useAuth();

@@ -2,24 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { getAuditLogs } from "../api/auditLogApi";
 import { useAuth } from "../auth/useAuth";
-import type { AuditAction } from "../types/auditLog";
 import { downloadCsv } from "../utils/downloadCsv";
-
-function getActionClass(action: AuditAction) {
-    if (action.includes("SUCCEEDED")) {
-        return "status status-success";
-    }
-
-    if (action.includes("FAILED") || action.includes("DEAD_LETTER")) {
-        return "status status-failed";
-    }
-
-    if (action.includes("PROCESSING")) {
-        return "status status-processing";
-    }
-
-    return "status";
-}
+import { getStatusClass } from "../utils/statusClass";
 
 export function AuditLogsPage() {
     const { user, accessToken } = useAuth();
@@ -170,7 +154,7 @@ export function AuditLogsPage() {
                         <tr key={log.id}>
                             <td>{log.id}</td>
                             <td>
-                  <span className={getActionClass(log.action)}>
+                  <span className={getStatusClass(log.action)}>
                     {log.action}
                   </span>
                             </td>
