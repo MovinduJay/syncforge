@@ -4,6 +4,7 @@ import { getIntegrations } from "../api/integrationApi";
 import { useAuth } from "../auth/useAuth";
 import { formatDateTime } from "../utils/formatDateTime";
 import { TableEmptyState } from "../components/TableEmptyState";
+import { TableToolbar } from "../components/TableToolbar";
 
 export function IntegrationsPage() {
     const { user, accessToken } = useAuth();
@@ -56,7 +57,7 @@ export function IntegrationsPage() {
                 <article className="card"><h2>System Types</h2><p className="metric">{integrationTypes}</p></article>
             </section>
 
-            <section className="table-toolbar" aria-label="Integration filters">
+            <TableToolbar label="Integration filters">
                 <label className="toolbar-field">
                     <span>Search</span>
                     <input
@@ -76,7 +77,7 @@ export function IntegrationsPage() {
                     </select>
                 </label>
                 <p className="toolbar-summary">Showing {filteredIntegrations.length} of {integrations.length}</p>
-            </section>
+            </TableToolbar>
 
             <section className="table-card">
                 <table>

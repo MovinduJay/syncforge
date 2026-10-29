@@ -7,6 +7,7 @@ import { getStatusClass } from "../utils/statusClass";
 import { formatDateTime } from "../utils/formatDateTime";
 import { ACTIVITY_REFRESH_INTERVAL_MS } from "../config/query";
 import { TableEmptyState } from "../components/TableEmptyState";
+import { TableToolbar } from "../components/TableToolbar";
 
 export function SyncJobsPage() {
     const { user, accessToken } = useAuth();
@@ -84,7 +85,7 @@ export function SyncJobsPage() {
                 <p className="error">Failed to load sync jobs.</p>
             )}
 
-            <section className="table-toolbar" aria-label="Sync job filters">
+            <TableToolbar label="Sync job filters">
                 <label className="toolbar-field">
                     <span>Search</span>
                     <input
@@ -109,7 +110,7 @@ export function SyncJobsPage() {
                     </select>
                 </label>
                 <p className="toolbar-summary">Showing {filteredJobs.length} of {syncJobs.length} jobs</p>
-            </section>
+            </TableToolbar>
 
             <section className="table-card">
                 <table>

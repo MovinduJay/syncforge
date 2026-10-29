@@ -7,6 +7,7 @@ import { getStatusClass } from "../utils/statusClass";
 import { formatDateTime } from "../utils/formatDateTime";
 import { ACTIVITY_REFRESH_INTERVAL_MS } from "../config/query";
 import { TableEmptyState } from "../components/TableEmptyState";
+import { TableToolbar } from "../components/TableToolbar";
 
 export function AuditLogsPage() {
     const { user, accessToken } = useAuth();
@@ -106,7 +107,7 @@ export function AuditLogsPage() {
                 <p className="error">Failed to load audit logs.</p>
             )}
 
-            <section className="table-toolbar" aria-label="Audit log filters">
+            <TableToolbar label="Audit log filters">
                 <label className="toolbar-field">
                     <span>Search</span>
                     <input
@@ -137,7 +138,7 @@ export function AuditLogsPage() {
                 >
                     Export CSV
                 </button>
-            </section>
+            </TableToolbar>
 
             <section className="table-card">
                 <table>

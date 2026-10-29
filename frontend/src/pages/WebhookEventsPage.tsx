@@ -7,6 +7,7 @@ import { getStatusClass } from "../utils/statusClass";
 import { formatDateTime } from "../utils/formatDateTime";
 import { ACTIVITY_REFRESH_INTERVAL_MS } from "../config/query";
 import { TableEmptyState } from "../components/TableEmptyState";
+import { TableToolbar } from "../components/TableToolbar";
 
 export function WebhookEventsPage() {
     const { user, accessToken } = useAuth();
@@ -89,7 +90,7 @@ export function WebhookEventsPage() {
                 <p className="error">Failed to load webhook events.</p>
             )}
 
-            <section className="table-toolbar" aria-label="Webhook event filters">
+            <TableToolbar label="Webhook event filters">
                 <label className="toolbar-field">
                     <span>Search</span>
                     <input
@@ -113,7 +114,7 @@ export function WebhookEventsPage() {
                     </select>
                 </label>
                 <p className="toolbar-summary">Showing {filteredEvents.length} of {webhookEvents.length} events</p>
-            </section>
+            </TableToolbar>
 
             <section className="table-card">
                 <table>
