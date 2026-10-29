@@ -6,6 +6,7 @@ import type { WebhookEventStatus } from "../types/webhookEvent";
 import { getStatusClass } from "../utils/statusClass";
 import { formatDateTime } from "../utils/formatDateTime";
 import { ACTIVITY_REFRESH_INTERVAL_MS } from "../config/query";
+import { TableEmptyState } from "../components/TableEmptyState";
 
 export function WebhookEventsPage() {
     const { user, accessToken } = useAuth();
@@ -145,7 +146,7 @@ export function WebhookEventsPage() {
                         </tr>
                     ))}
                     {filteredEvents.length === 0 && !webhookEventsQuery.isLoading && (
-                        <tr><td colSpan={7} className="empty-state">No webhook events match these filters.</td></tr>
+                        <TableEmptyState columnCount={7} message="No webhook events match these filters." />
                     )}
                     </tbody>
                 </table>

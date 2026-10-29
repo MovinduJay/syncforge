@@ -3,6 +3,7 @@ import { useState } from "react";
 import { getIntegrations } from "../api/integrationApi";
 import { useAuth } from "../auth/useAuth";
 import { formatDateTime } from "../utils/formatDateTime";
+import { TableEmptyState } from "../components/TableEmptyState";
 
 export function IntegrationsPage() {
     const { user, accessToken } = useAuth();
@@ -102,7 +103,7 @@ export function IntegrationsPage() {
                         </tr>
                     ))}
                     {filteredIntegrations.length === 0 && !integrationsQuery.isLoading && (
-                        <tr><td colSpan={5} className="empty-state">No integrations match these filters.</td></tr>
+                        <TableEmptyState columnCount={5} message="No integrations match these filters." />
                     )}
                     </tbody>
                 </table>

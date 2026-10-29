@@ -6,6 +6,7 @@ import { downloadCsv } from "../utils/downloadCsv";
 import { getStatusClass } from "../utils/statusClass";
 import { formatDateTime } from "../utils/formatDateTime";
 import { ACTIVITY_REFRESH_INTERVAL_MS } from "../config/query";
+import { TableEmptyState } from "../components/TableEmptyState";
 
 export function AuditLogsPage() {
     const { user, accessToken } = useAuth();
@@ -167,7 +168,7 @@ export function AuditLogsPage() {
                         </tr>
                     ))}
                     {filteredLogs.length === 0 && !auditLogsQuery.isLoading && (
-                        <tr><td colSpan={6} className="empty-state">No audit logs match these filters.</td></tr>
+                        <TableEmptyState columnCount={6} message="No audit logs match these filters." />
                     )}
                     </tbody>
                 </table>

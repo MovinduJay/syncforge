@@ -6,6 +6,7 @@ import type { SyncJobStatus } from "../types/syncJob";
 import { getStatusClass } from "../utils/statusClass";
 import { formatDateTime } from "../utils/formatDateTime";
 import { ACTIVITY_REFRESH_INTERVAL_MS } from "../config/query";
+import { TableEmptyState } from "../components/TableEmptyState";
 
 export function SyncJobsPage() {
     const { user, accessToken } = useAuth();
@@ -143,7 +144,7 @@ export function SyncJobsPage() {
                         </tr>
                     ))}
                     {filteredJobs.length === 0 && !syncJobsQuery.isLoading && (
-                        <tr><td colSpan={8} className="empty-state">No sync jobs match these filters.</td></tr>
+                        <TableEmptyState columnCount={8} message="No sync jobs match these filters." />
                     )}
                     </tbody>
                 </table>
