@@ -5,6 +5,7 @@ import { useAuth } from "../auth/useAuth";
 import type { WebhookEventStatus } from "../types/webhookEvent";
 import { getStatusClass } from "../utils/statusClass";
 import { formatDateTime } from "../utils/formatDateTime";
+import { ACTIVITY_REFRESH_INTERVAL_MS } from "../config/query";
 
 export function WebhookEventsPage() {
     const { user, accessToken } = useAuth();
@@ -15,7 +16,7 @@ export function WebhookEventsPage() {
         queryKey: ["webhook-events", user?.tenantId],
         queryFn: () => getWebhookEvents(user!.tenantId, accessToken!),
         enabled: Boolean(user?.tenantId && accessToken),
-        refetchInterval: 5000,
+        refetchInterval: ACTIVITY_REFRESH_INTERVAL_MS,
     });
 
     const webhookEvents = webhookEventsQuery.data ?? [];

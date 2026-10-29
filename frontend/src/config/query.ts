@@ -1,0 +1,1 @@
+export const ACTIVITY_REFRESH_INTERVAL_MS = 5_000;

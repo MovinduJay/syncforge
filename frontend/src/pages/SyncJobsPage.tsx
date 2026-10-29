@@ -5,6 +5,7 @@ import { useAuth } from "../auth/useAuth";
 import type { SyncJobStatus } from "../types/syncJob";
 import { getStatusClass } from "../utils/statusClass";
 import { formatDateTime } from "../utils/formatDateTime";
+import { ACTIVITY_REFRESH_INTERVAL_MS } from "../config/query";
 
 export function SyncJobsPage() {
     const { user, accessToken } = useAuth();
@@ -15,7 +16,7 @@ export function SyncJobsPage() {
         queryKey: ["sync-jobs", user?.tenantId],
         queryFn: () => getSyncJobs(user!.tenantId, accessToken!),
         enabled: Boolean(user?.tenantId && accessToken),
-        refetchInterval: 5000,
+        refetchInterval: ACTIVITY_REFRESH_INTERVAL_MS,
     });
 
     const syncJobs = syncJobsQuery.data ?? [];
