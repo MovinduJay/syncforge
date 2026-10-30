@@ -6,6 +6,7 @@ import { formatDateTime } from "../utils/formatDateTime";
 import { TableEmptyState } from "../components/TableEmptyState";
 import { TableToolbar } from "../components/TableToolbar";
 import { matchesSearch } from "../utils/matchesSearch";
+import { TableResultSummary } from "../components/TableResultSummary";
 
 export function IntegrationsPage() {
     const { user, accessToken } = useAuth();
@@ -76,7 +77,7 @@ export function IntegrationsPage() {
                         <option value="SUPPORT">Support</option>
                     </select>
                 </label>
-                <p className="toolbar-summary">Showing {filteredIntegrations.length} of {integrations.length}</p>
+                <TableResultSummary visibleCount={filteredIntegrations.length} totalCount={integrations.length} itemLabel="integrations" />
             </TableToolbar>
 
             <section className="table-card">

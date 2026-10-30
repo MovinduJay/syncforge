@@ -9,6 +9,7 @@ import { ACTIVITY_REFRESH_INTERVAL_MS } from "../config/query";
 import { TableEmptyState } from "../components/TableEmptyState";
 import { TableToolbar } from "../components/TableToolbar";
 import { matchesSearch } from "../utils/matchesSearch";
+import { TableResultSummary } from "../components/TableResultSummary";
 
 export function AuditLogsPage() {
     const { user, accessToken } = useAuth();
@@ -129,7 +130,7 @@ export function AuditLogsPage() {
                         <option value="FAILURE">Failures</option>
                     </select>
                 </label>
-                <p className="toolbar-summary">Showing {filteredLogs.length} of {auditLogs.length} logs</p>
+                <TableResultSummary visibleCount={filteredLogs.length} totalCount={auditLogs.length} itemLabel="logs" />
                 <button
                     type="button"
                     className="secondary-button"

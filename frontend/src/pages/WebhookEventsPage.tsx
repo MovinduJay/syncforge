@@ -9,6 +9,7 @@ import { ACTIVITY_REFRESH_INTERVAL_MS } from "../config/query";
 import { TableEmptyState } from "../components/TableEmptyState";
 import { TableToolbar } from "../components/TableToolbar";
 import { matchesSearch } from "../utils/matchesSearch";
+import { TableResultSummary } from "../components/TableResultSummary";
 
 export function WebhookEventsPage() {
     const { user, accessToken } = useAuth();
@@ -113,7 +114,7 @@ export function WebhookEventsPage() {
                         <option value="FAILED">Failed</option>
                     </select>
                 </label>
-                <p className="toolbar-summary">Showing {filteredEvents.length} of {webhookEvents.length} events</p>
+                <TableResultSummary visibleCount={filteredEvents.length} totalCount={webhookEvents.length} itemLabel="events" />
             </TableToolbar>
 
             <section className="table-card">

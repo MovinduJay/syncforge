@@ -9,6 +9,7 @@ import { ACTIVITY_REFRESH_INTERVAL_MS } from "../config/query";
 import { TableEmptyState } from "../components/TableEmptyState";
 import { TableToolbar } from "../components/TableToolbar";
 import { matchesSearch } from "../utils/matchesSearch";
+import { TableResultSummary } from "../components/TableResultSummary";
 
 export function SyncJobsPage() {
     const { user, accessToken } = useAuth();
@@ -109,7 +110,7 @@ export function SyncJobsPage() {
                         <option value="DEAD_LETTER">Dead letter</option>
                     </select>
                 </label>
-                <p className="toolbar-summary">Showing {filteredJobs.length} of {syncJobs.length} jobs</p>
+                <TableResultSummary visibleCount={filteredJobs.length} totalCount={syncJobs.length} itemLabel="jobs" />
             </TableToolbar>
 
             <section className="table-card">
