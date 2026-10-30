@@ -143,6 +143,7 @@ export function AuditLogsPage() {
 
             <section className="table-card">
                 <table>
+                    <caption className="sr-only">Tenant audit activity</caption>
                     <thead>
                     <tr>
                         <th>ID</th>

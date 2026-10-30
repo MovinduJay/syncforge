@@ -82,6 +82,7 @@ export function IntegrationsPage() {
 
             <section className="table-card">
                 <table>
+                    <caption className="sr-only">Connected external systems</caption>
                     <thead>
                     <tr>
                         <th>ID</th>

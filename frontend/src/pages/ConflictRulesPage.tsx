@@ -83,6 +83,7 @@ export function ConflictRulesPage() {
 
             <section className="table-card">
                 <table>
+                    <caption className="sr-only">Configured conflict resolution rules</caption>
                     <thead>
                     <tr>
                         <th>ID</th>

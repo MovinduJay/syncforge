@@ -115,6 +115,7 @@ export function SyncJobsPage() {
 
             <section className="table-card">
                 <table>
+                    <caption className="sr-only">Asynchronous synchronization jobs</caption>
                     <thead>
                     <tr>
                         <th>ID</th>

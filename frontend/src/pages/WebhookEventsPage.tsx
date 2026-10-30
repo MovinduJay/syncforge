@@ -119,6 +119,7 @@ export function WebhookEventsPage() {
 
             <section className="table-card">
                 <table>
+                    <caption className="sr-only">Received webhook events</caption>
                     <thead>
                     <tr>
                         <th>ID</th>

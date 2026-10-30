@@ -66,6 +66,7 @@ export function EntityMappingsPage() {
 
       <section className="table-card">
         <table>
+          <caption className="sr-only">Entity mappings between connected systems</caption>
           <thead>
             <tr>
               <th>ID</th>
