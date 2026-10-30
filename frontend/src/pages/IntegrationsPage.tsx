@@ -5,6 +5,7 @@ import { useAuth } from "../auth/useAuth";
 import { formatDateTime } from "../utils/formatDateTime";
 import { TableEmptyState } from "../components/TableEmptyState";
 import { TableToolbar } from "../components/TableToolbar";
+import { matchesSearch } from "../utils/matchesSearch";
 
 export function IntegrationsPage() {
     const { user, accessToken } = useAuth();
@@ -18,16 +19,15 @@ export function IntegrationsPage() {
     });
 
     const integrations = integrationsQuery.data ?? [];
-    const normalizedSearch = search.trim().toLowerCase();
     const filteredIntegrations = integrations.filter((integration) => {
         const matchesType = typeFilter === "ALL" || integration.type === typeFilter;
-        const matchesSearch = !normalizedSearch || [
+        const matchesQuery = matchesSearch(search, [
             integration.id,
             integration.displayName,
             integration.status,
-        ].some((value) => String(value).toLowerCase().includes(normalizedSearch));
+        ]);
 
-        return matchesType && matchesSearch;
+        return matchesType && matchesQuery;
     });
     const activeCount = integrations.filter((integration) => integration.status === "ACTIVE").length;
     const integrationTypes = new Set(integrations.map((integration) => integration.type)).size;

@@ -8,6 +8,7 @@ import { formatDateTime } from "../utils/formatDateTime";
 import { ACTIVITY_REFRESH_INTERVAL_MS } from "../config/query";
 import { TableEmptyState } from "../components/TableEmptyState";
 import { TableToolbar } from "../components/TableToolbar";
+import { matchesSearch } from "../utils/matchesSearch";
 
 export function SyncJobsPage() {
     const { user, accessToken } = useAuth();
@@ -22,18 +23,17 @@ export function SyncJobsPage() {
     });
 
     const syncJobs = syncJobsQuery.data ?? [];
-    const normalizedSearch = search.trim().toLowerCase();
     const filteredJobs = syncJobs.filter((job) => {
         const matchesStatus = statusFilter === "ALL" || job.status === statusFilter;
-        const matchesSearch = !normalizedSearch || [
+        const matchesQuery = matchesSearch(search, [
             job.id,
             job.webhookEventId,
             job.entityType,
             job.operationType,
             job.lastError,
-        ].some((value) => String(value ?? "").toLowerCase().includes(normalizedSearch));
+        ]);
 
-        return matchesStatus && matchesSearch;
+        return matchesStatus && matchesQuery;
     });
 
     const totalJobs = syncJobs.length;

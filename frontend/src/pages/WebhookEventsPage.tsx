@@ -8,6 +8,7 @@ import { formatDateTime } from "../utils/formatDateTime";
 import { ACTIVITY_REFRESH_INTERVAL_MS } from "../config/query";
 import { TableEmptyState } from "../components/TableEmptyState";
 import { TableToolbar } from "../components/TableToolbar";
+import { matchesSearch } from "../utils/matchesSearch";
 
 export function WebhookEventsPage() {
     const { user, accessToken } = useAuth();
@@ -22,17 +23,16 @@ export function WebhookEventsPage() {
     });
 
     const webhookEvents = webhookEventsQuery.data ?? [];
-    const normalizedSearch = search.trim().toLowerCase();
     const filteredEvents = webhookEvents.filter((event) => {
         const matchesStatus = statusFilter === "ALL" || event.status === statusFilter;
-        const matchesSearch = !normalizedSearch || [
+        const matchesQuery = matchesSearch(search, [
             event.id,
             event.integrationId,
             event.externalEventId,
             event.eventType,
-        ].some((value) => String(value).toLowerCase().includes(normalizedSearch));
+        ]);
 
-        return matchesStatus && matchesSearch;
+        return matchesStatus && matchesQuery;
     });
 
     const receivedCount = webhookEvents.filter(

@@ -8,6 +8,7 @@ import { formatDateTime } from "../utils/formatDateTime";
 import { ACTIVITY_REFRESH_INTERVAL_MS } from "../config/query";
 import { TableEmptyState } from "../components/TableEmptyState";
 import { TableToolbar } from "../components/TableToolbar";
+import { matchesSearch } from "../utils/matchesSearch";
 
 export function AuditLogsPage() {
     const { user, accessToken } = useAuth();
@@ -22,21 +23,20 @@ export function AuditLogsPage() {
     });
 
     const auditLogs = auditLogsQuery.data ?? [];
-    const normalizedSearch = search.trim().toLowerCase();
     const filteredLogs = auditLogs.filter((log) => {
         const matchesCategory = category === "ALL"
             || (category === "WEBHOOK" && log.action.startsWith("WEBHOOK"))
             || (category === "SYNC_JOB" && log.action.startsWith("SYNC_JOB"))
             || (category === "FAILURE" && (log.action.includes("FAILED") || log.action.includes("DEAD_LETTER")));
-        const matchesSearch = !normalizedSearch || [
+        const matchesQuery = matchesSearch(search, [
             log.id,
             log.action,
             log.message,
             log.webhookEventId,
             log.syncJobId,
-        ].some((value) => String(value ?? "").toLowerCase().includes(normalizedSearch));
+        ]);
 
-        return matchesCategory && matchesSearch;
+        return matchesCategory && matchesQuery;
     });
 
     const webhookLogs = auditLogs.filter((log) =>
