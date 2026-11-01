@@ -10,6 +10,7 @@ import { TableEmptyState } from "../components/TableEmptyState";
 import { TableToolbar } from "../components/TableToolbar";
 import { matchesSearch } from "../utils/matchesSearch";
 import { TableResultSummary } from "../components/TableResultSummary";
+import { QueryFeedback } from "../components/QueryFeedback";
 
 export function AuditLogsPage() {
     const { user, accessToken } = useAuth();
@@ -102,11 +103,12 @@ export function AuditLogsPage() {
                 </article>
             </section>
 
-            {auditLogsQuery.isLoading && <p className="muted">Loading audit logs...</p>}
-
-            {auditLogsQuery.isError && (
-                <p className="error">Failed to load audit logs.</p>
-            )}
+            <QueryFeedback
+                isLoading={auditLogsQuery.isLoading}
+                isError={auditLogsQuery.isError}
+                loadingMessage="Loading audit logs..."
+                errorMessage="Failed to load audit logs."
+            />
 
             <TableToolbar label="Audit log filters">
                 <label className="toolbar-field">

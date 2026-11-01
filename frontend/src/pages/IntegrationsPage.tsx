@@ -7,6 +7,7 @@ import { TableEmptyState } from "../components/TableEmptyState";
 import { TableToolbar } from "../components/TableToolbar";
 import { matchesSearch } from "../utils/matchesSearch";
 import { TableResultSummary } from "../components/TableResultSummary";
+import { QueryFeedback } from "../components/QueryFeedback";
 
 export function IntegrationsPage() {
     const { user, accessToken } = useAuth();
@@ -45,11 +46,12 @@ export function IntegrationsPage() {
                 </div>
             </section>
 
-            {integrationsQuery.isLoading && <p className="muted">Loading integrations...</p>}
-
-            {integrationsQuery.isError && (
-                <p className="error">Failed to load integrations.</p>
-            )}
+            <QueryFeedback
+                isLoading={integrationsQuery.isLoading}
+                isError={integrationsQuery.isError}
+                loadingMessage="Loading integrations..."
+                errorMessage="Failed to load integrations."
+            />
 
             <section className="grid stats-grid">
                 <article className="card"><h2>Total</h2><p className="metric">{integrations.length}</p></article>

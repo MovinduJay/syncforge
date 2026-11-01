@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getConflictRules } from "../api/conflictRuleApi";
 import { useAuth } from "../auth/useAuth";
 import { formatDateTime } from "../utils/formatDateTime";
+import { QueryFeedback } from "../components/QueryFeedback";
 import type { ConflictStrategy } from "../types/conflictRule";
 
 function getStrategyClass(strategy: ConflictStrategy) {
@@ -73,13 +74,12 @@ export function ConflictRulesPage() {
                 </article>
             </section>
 
-            {conflictRulesQuery.isLoading && (
-                <p className="muted">Loading conflict rules...</p>
-            )}
-
-            {conflictRulesQuery.isError && (
-                <p className="error">Failed to load conflict rules.</p>
-            )}
+            <QueryFeedback
+                isLoading={conflictRulesQuery.isLoading}
+                isError={conflictRulesQuery.isError}
+                loadingMessage="Loading conflict rules..."
+                errorMessage="Failed to load conflict rules."
+            />
 
             <section className="table-card">
                 <table>

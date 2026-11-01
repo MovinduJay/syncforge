@@ -10,6 +10,7 @@ import { TableEmptyState } from "../components/TableEmptyState";
 import { TableToolbar } from "../components/TableToolbar";
 import { matchesSearch } from "../utils/matchesSearch";
 import { TableResultSummary } from "../components/TableResultSummary";
+import { QueryFeedback } from "../components/QueryFeedback";
 
 export function WebhookEventsPage() {
     const { user, accessToken } = useAuth();
@@ -83,13 +84,12 @@ export function WebhookEventsPage() {
                 </article>
             </section>
 
-            {webhookEventsQuery.isLoading && (
-                <p className="muted">Loading webhook events...</p>
-            )}
-
-            {webhookEventsQuery.isError && (
-                <p className="error">Failed to load webhook events.</p>
-            )}
+            <QueryFeedback
+                isLoading={webhookEventsQuery.isLoading}
+                isError={webhookEventsQuery.isError}
+                loadingMessage="Loading webhook events..."
+                errorMessage="Failed to load webhook events."
+            />
 
             <TableToolbar label="Webhook event filters">
                 <label className="toolbar-field">

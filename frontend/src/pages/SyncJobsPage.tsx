@@ -10,6 +10,7 @@ import { TableEmptyState } from "../components/TableEmptyState";
 import { TableToolbar } from "../components/TableToolbar";
 import { matchesSearch } from "../utils/matchesSearch";
 import { TableResultSummary } from "../components/TableResultSummary";
+import { QueryFeedback } from "../components/QueryFeedback";
 
 export function SyncJobsPage() {
     const { user, accessToken } = useAuth();
@@ -80,11 +81,12 @@ export function SyncJobsPage() {
                 </article>
             </section>
 
-            {syncJobsQuery.isLoading && <p className="muted">Loading sync jobs...</p>}
-
-            {syncJobsQuery.isError && (
-                <p className="error">Failed to load sync jobs.</p>
-            )}
+            <QueryFeedback
+                isLoading={syncJobsQuery.isLoading}
+                isError={syncJobsQuery.isError}
+                loadingMessage="Loading sync jobs..."
+                errorMessage="Failed to load sync jobs."
+            />
 
             <TableToolbar label="Sync job filters">
                 <label className="toolbar-field">
