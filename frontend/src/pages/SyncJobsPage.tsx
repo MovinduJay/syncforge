@@ -1,23 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { getSyncJobs } from "../api/syncJobApi";
-import { useAuth } from "../auth/AuthContext";
+import { useAuth } from "../auth/useAuth";
 import type { SyncJobStatus } from "../types/syncJob";
-
-function getStatusClass(status: SyncJobStatus) {
-    switch (status) {
-        case "SUCCEEDED":
-            return "status status-success";
-        case "FAILED":
-            return "status status-failed";
-        case "DEAD_LETTER":
-            return "status status-dead";
-        case "PROCESSING":
-            return "status status-processing";
-        default:
-            return "status";
-    }
-}
+import { getStatusClass } from "../utils/statusClass";
+import { formatDateTime } from "../utils/formatDateTime";
+import { ACTIVITY_REFRESH_INTERVAL_MS } from "../config/query";
+import { TableEmptyState } from "../components/TableEmptyState";
+import { TableToolbar } from "../components/TableToolbar";
+import { matchesSearch } from "../utils/matchesSearch";
+import { TableResultSummary } from "../components/TableResultSummary";
+import { QueryFeedback } from "../components/QueryFeedback";
 
 export function SyncJobsPage() {
     const { user, accessToken } = useAuth();
@@ -28,22 +21,21 @@ export function SyncJobsPage() {
         queryKey: ["sync-jobs", user?.tenantId],
         queryFn: () => getSyncJobs(user!.tenantId, accessToken!),
         enabled: Boolean(user?.tenantId && accessToken),
-        refetchInterval: 5000,
+        refetchInterval: ACTIVITY_REFRESH_INTERVAL_MS,
     });
 
     const syncJobs = syncJobsQuery.data ?? [];
-    const normalizedSearch = search.trim().toLowerCase();
     const filteredJobs = syncJobs.filter((job) => {
         const matchesStatus = statusFilter === "ALL" || job.status === statusFilter;
-        const matchesSearch = !normalizedSearch || [
+        const matchesQuery = matchesSearch(search, [
             job.id,
             job.webhookEventId,
             job.entityType,
             job.operationType,
             job.lastError,
-        ].some((value) => String(value ?? "").toLowerCase().includes(normalizedSearch));
+        ]);
 
-        return matchesStatus && matchesSearch;
+        return matchesStatus && matchesQuery;
     });
 
     const totalJobs = syncJobs.length;
@@ -89,13 +81,14 @@ export function SyncJobsPage() {
                 </article>
             </section>
 
-            {syncJobsQuery.isLoading && <p className="muted">Loading sync jobs...</p>}
+            <QueryFeedback
+                isLoading={syncJobsQuery.isLoading}
+                isError={syncJobsQuery.isError}
+                loadingMessage="Loading sync jobs..."
+                errorMessage="Failed to load sync jobs."
+            />
 
-            {syncJobsQuery.isError && (
-                <p className="error">Failed to load sync jobs.</p>
-            )}
-
-            <section className="table-toolbar" aria-label="Sync job filters">
+            <TableToolbar label="Sync job filters">
                 <label className="toolbar-field">
                     <span>Search</span>
                     <input
@@ -119,11 +112,12 @@ export function SyncJobsPage() {
                         <option value="DEAD_LETTER">Dead letter</option>
                     </select>
                 </label>
-                <p className="toolbar-summary">Showing {filteredJobs.length} of {syncJobs.length} jobs</p>
-            </section>
+                <TableResultSummary visibleCount={filteredJobs.length} totalCount={syncJobs.length} itemLabel="jobs" />
+            </TableToolbar>
 
             <section className="table-card">
                 <table>
+                    <caption className="sr-only">Asynchronous synchronization jobs</caption>
                     <thead>
                     <tr>
                         <th>ID</th>
@@ -151,11 +145,11 @@ export function SyncJobsPage() {
                             </td>
                             <td>{job.attemptCount}</td>
                             <td>{job.lastError ?? "-"}</td>
-                            <td>{new Date(job.createdAt).toLocaleString()}</td>
+                            <td>{formatDateTime(job.createdAt)}</td>
                         </tr>
                     ))}
                     {filteredJobs.length === 0 && !syncJobsQuery.isLoading && (
-                        <tr><td colSpan={8} className="empty-state">No sync jobs match these filters.</td></tr>
+                        <TableEmptyState columnCount={8} message="No sync jobs match these filters." />
                     )}
                     </tbody>
                 </table>

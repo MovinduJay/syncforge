@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { getIntegrations } from "../api/integrationApi";
 import { getCurrentTenant } from "../api/tenantApi";
-import { useAuth } from "../auth/AuthContext";
+import { useAuth } from "../auth/useAuth";
 import { TestWebhookPanel } from "../components/TestWebhookPanel";
 
 export function DashboardPage() {

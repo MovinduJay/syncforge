@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { getEntityMappings } from "../api/entityMappingApi";
-import { useAuth } from "../auth/AuthContext";
+import { useAuth } from "../auth/useAuth";
+import { QueryFeedback } from "../components/QueryFeedback";
 
 export function EntityMappingsPage() {
   const { user, accessToken } = useAuth();
@@ -56,16 +57,16 @@ export function EntityMappingsPage() {
         </article>
       </section>
 
-      {entityMappingsQuery.isLoading && (
-        <p className="muted">Loading entity mappings...</p>
-      )}
-
-      {entityMappingsQuery.isError && (
-        <p className="error">Failed to load entity mappings.</p>
-      )}
+      <QueryFeedback
+        isLoading={entityMappingsQuery.isLoading}
+        isError={entityMappingsQuery.isError}
+        loadingMessage="Loading entity mappings..."
+        errorMessage="Failed to load entity mappings."
+      />
 
       <section className="table-card">
         <table>
+          <caption className="sr-only">Entity mappings between connected systems</caption>
           <thead>
             <tr>
               <th>ID</th>

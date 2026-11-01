@@ -1,7 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { getIntegrations } from "../api/integrationApi";
-import { useAuth } from "../auth/AuthContext";
+import { useAuth } from "../auth/useAuth";
+import { formatDateTime } from "../utils/formatDateTime";
+import { TableEmptyState } from "../components/TableEmptyState";
+import { TableToolbar } from "../components/TableToolbar";
+import { matchesSearch } from "../utils/matchesSearch";
+import { TableResultSummary } from "../components/TableResultSummary";
+import { QueryFeedback } from "../components/QueryFeedback";
 
 export function IntegrationsPage() {
     const { user, accessToken } = useAuth();
@@ -15,16 +21,15 @@ export function IntegrationsPage() {
     });
 
     const integrations = integrationsQuery.data ?? [];
-    const normalizedSearch = search.trim().toLowerCase();
     const filteredIntegrations = integrations.filter((integration) => {
         const matchesType = typeFilter === "ALL" || integration.type === typeFilter;
-        const matchesSearch = !normalizedSearch || [
+        const matchesQuery = matchesSearch(search, [
             integration.id,
             integration.displayName,
             integration.status,
-        ].some((value) => String(value).toLowerCase().includes(normalizedSearch));
+        ]);
 
-        return matchesType && matchesSearch;
+        return matchesType && matchesQuery;
     });
     const activeCount = integrations.filter((integration) => integration.status === "ACTIVE").length;
     const integrationTypes = new Set(integrations.map((integration) => integration.type)).size;
@@ -41,11 +46,12 @@ export function IntegrationsPage() {
                 </div>
             </section>
 
-            {integrationsQuery.isLoading && <p className="muted">Loading integrations...</p>}
-
-            {integrationsQuery.isError && (
-                <p className="error">Failed to load integrations.</p>
-            )}
+            <QueryFeedback
+                isLoading={integrationsQuery.isLoading}
+                isError={integrationsQuery.isError}
+                loadingMessage="Loading integrations..."
+                errorMessage="Failed to load integrations."
+            />
 
             <section className="grid stats-grid">
                 <article className="card"><h2>Total</h2><p className="metric">{integrations.length}</p></article>
@@ -54,7 +60,7 @@ export function IntegrationsPage() {
                 <article className="card"><h2>System Types</h2><p className="metric">{integrationTypes}</p></article>
             </section>
 
-            <section className="table-toolbar" aria-label="Integration filters">
+            <TableToolbar label="Integration filters">
                 <label className="toolbar-field">
                     <span>Search</span>
                     <input
@@ -73,11 +79,12 @@ export function IntegrationsPage() {
                         <option value="SUPPORT">Support</option>
                     </select>
                 </label>
-                <p className="toolbar-summary">Showing {filteredIntegrations.length} of {integrations.length}</p>
-            </section>
+                <TableResultSummary visibleCount={filteredIntegrations.length} totalCount={integrations.length} itemLabel="integrations" />
+            </TableToolbar>
 
             <section className="table-card">
                 <table>
+                    <caption className="sr-only">Connected external systems</caption>
                     <thead>
                     <tr>
                         <th>ID</th>
@@ -97,11 +104,11 @@ export function IntegrationsPage() {
                             </td>
                             <td>{integration.displayName}</td>
                             <td>{integration.status}</td>
-                            <td>{new Date(integration.createdAt).toLocaleString()}</td>
+                            <td>{formatDateTime(integration.createdAt)}</td>
                         </tr>
                     ))}
                     {filteredIntegrations.length === 0 && !integrationsQuery.isLoading && (
-                        <tr><td colSpan={5} className="empty-state">No integrations match these filters.</td></tr>
+                        <TableEmptyState columnCount={5} message="No integrations match these filters." />
                     )}
                     </tbody>
                 </table>

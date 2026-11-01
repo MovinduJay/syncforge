@@ -1,6 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { getConflictRules } from "../api/conflictRuleApi";
-import { useAuth } from "../auth/AuthContext";
+import { useAuth } from "../auth/useAuth";
+import { formatDateTime } from "../utils/formatDateTime";
+import { QueryFeedback } from "../components/QueryFeedback";
 import type { ConflictStrategy } from "../types/conflictRule";
 
 function getStrategyClass(strategy: ConflictStrategy) {
@@ -72,16 +74,16 @@ export function ConflictRulesPage() {
                 </article>
             </section>
 
-            {conflictRulesQuery.isLoading && (
-                <p className="muted">Loading conflict rules...</p>
-            )}
-
-            {conflictRulesQuery.isError && (
-                <p className="error">Failed to load conflict rules.</p>
-            )}
+            <QueryFeedback
+                isLoading={conflictRulesQuery.isLoading}
+                isError={conflictRulesQuery.isError}
+                loadingMessage="Loading conflict rules..."
+                errorMessage="Failed to load conflict rules."
+            />
 
             <section className="table-card">
                 <table>
+                    <caption className="sr-only">Configured conflict resolution rules</caption>
                     <thead>
                     <tr>
                         <th>ID</th>
@@ -109,7 +111,7 @@ export function ConflictRulesPage() {
                   </span>
                             </td>
                             <td>{rule.active ? "ACTIVE" : "INACTIVE"}</td>
-                            <td>{new Date(rule.createdAt).toLocaleString()}</td>
+                            <td>{formatDateTime(rule.createdAt)}</td>
                         </tr>
                     ))}
                     </tbody>

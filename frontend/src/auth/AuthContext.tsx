@@ -1,7 +1,5 @@
 import {
-    createContext,
     useCallback,
-    useContext,
     useEffect,
     useMemo,
     useState,
@@ -13,15 +11,7 @@ import {
     refreshAuthToken,
 } from "../api/authApi";
 import type { CurrentUser } from "../types/auth";
-
-type AuthContextValue = {
-    user: CurrentUser | null;
-    accessToken: string | null;
-    refreshToken: string | null;
-    isAuthenticated: boolean;
-    login: (email: string, password: string) => Promise<void>;
-    logout: () => Promise<void>;
-};
+import { AuthContext } from "./useAuth";
 
 const AUTH_STORAGE_KEY = "syncforge_auth";
 
@@ -30,8 +20,6 @@ type StoredAuth = {
     accessToken: string;
     refreshToken: string;
 };
-
-const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 function loadStoredAuth(): StoredAuth | null {
     const storedValue = sessionStorage.getItem(AUTH_STORAGE_KEY);
@@ -196,14 +184,4 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}
-
-export function useAuth() {
-    const context = useContext(AuthContext);
-
-    if (!context) {
-        throw new Error("useAuth must be used inside AuthProvider");
-    }
-
-    return context;
 }

@@ -1,21 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { getWebhookEvents } from "../api/webhookEventApi";
-import { useAuth } from "../auth/AuthContext";
+import { useAuth } from "../auth/useAuth";
 import type { WebhookEventStatus } from "../types/webhookEvent";
-
-function getStatusClass(status: WebhookEventStatus) {
-    switch (status) {
-        case "PROCESSED":
-            return "status status-success";
-        case "FAILED":
-            return "status status-failed";
-        case "DUPLICATE":
-            return "status status-processing";
-        default:
-            return "status";
-    }
-}
+import { getStatusClass } from "../utils/statusClass";
+import { formatDateTime } from "../utils/formatDateTime";
+import { ACTIVITY_REFRESH_INTERVAL_MS } from "../config/query";
+import { TableEmptyState } from "../components/TableEmptyState";
+import { TableToolbar } from "../components/TableToolbar";
+import { matchesSearch } from "../utils/matchesSearch";
+import { TableResultSummary } from "../components/TableResultSummary";
+import { QueryFeedback } from "../components/QueryFeedback";
 
 export function WebhookEventsPage() {
     const { user, accessToken } = useAuth();
@@ -26,21 +21,20 @@ export function WebhookEventsPage() {
         queryKey: ["webhook-events", user?.tenantId],
         queryFn: () => getWebhookEvents(user!.tenantId, accessToken!),
         enabled: Boolean(user?.tenantId && accessToken),
-        refetchInterval: 5000,
+        refetchInterval: ACTIVITY_REFRESH_INTERVAL_MS,
     });
 
     const webhookEvents = webhookEventsQuery.data ?? [];
-    const normalizedSearch = search.trim().toLowerCase();
     const filteredEvents = webhookEvents.filter((event) => {
         const matchesStatus = statusFilter === "ALL" || event.status === statusFilter;
-        const matchesSearch = !normalizedSearch || [
+        const matchesQuery = matchesSearch(search, [
             event.id,
             event.integrationId,
             event.externalEventId,
             event.eventType,
-        ].some((value) => String(value).toLowerCase().includes(normalizedSearch));
+        ]);
 
-        return matchesStatus && matchesSearch;
+        return matchesStatus && matchesQuery;
     });
 
     const receivedCount = webhookEvents.filter(
@@ -90,15 +84,14 @@ export function WebhookEventsPage() {
                 </article>
             </section>
 
-            {webhookEventsQuery.isLoading && (
-                <p className="muted">Loading webhook events...</p>
-            )}
+            <QueryFeedback
+                isLoading={webhookEventsQuery.isLoading}
+                isError={webhookEventsQuery.isError}
+                loadingMessage="Loading webhook events..."
+                errorMessage="Failed to load webhook events."
+            />
 
-            {webhookEventsQuery.isError && (
-                <p className="error">Failed to load webhook events.</p>
-            )}
-
-            <section className="table-toolbar" aria-label="Webhook event filters">
+            <TableToolbar label="Webhook event filters">
                 <label className="toolbar-field">
                     <span>Search</span>
                     <input
@@ -121,11 +114,12 @@ export function WebhookEventsPage() {
                         <option value="FAILED">Failed</option>
                     </select>
                 </label>
-                <p className="toolbar-summary">Showing {filteredEvents.length} of {webhookEvents.length} events</p>
-            </section>
+                <TableResultSummary visibleCount={filteredEvents.length} totalCount={webhookEvents.length} itemLabel="events" />
+            </TableToolbar>
 
             <section className="table-card">
                 <table>
+                    <caption className="sr-only">Received webhook events</caption>
                     <thead>
                     <tr>
                         <th>ID</th>
@@ -150,16 +144,12 @@ export function WebhookEventsPage() {
                     {event.status}
                   </span>
                             </td>
-                            <td>{new Date(event.receivedAt).toLocaleString()}</td>
-                            <td>
-                                {event.processedAt
-                                    ? new Date(event.processedAt).toLocaleString()
-                                    : "-"}
-                            </td>
+                            <td>{formatDateTime(event.receivedAt)}</td>
+                            <td>{formatDateTime(event.processedAt)}</td>
                         </tr>
                     ))}
                     {filteredEvents.length === 0 && !webhookEventsQuery.isLoading && (
-                        <tr><td colSpan={7} className="empty-state">No webhook events match these filters.</td></tr>
+                        <TableEmptyState columnCount={7} message="No webhook events match these filters." />
                     )}
                     </tbody>
                 </table>

@@ -1,25 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { getAuditLogs } from "../api/auditLogApi";
-import { useAuth } from "../auth/AuthContext";
-import type { AuditAction } from "../types/auditLog";
+import { useAuth } from "../auth/useAuth";
 import { downloadCsv } from "../utils/downloadCsv";
-
-function getActionClass(action: AuditAction) {
-    if (action.includes("SUCCEEDED")) {
-        return "status status-success";
-    }
-
-    if (action.includes("FAILED") || action.includes("DEAD_LETTER")) {
-        return "status status-failed";
-    }
-
-    if (action.includes("PROCESSING")) {
-        return "status status-processing";
-    }
-
-    return "status";
-}
+import { getStatusClass } from "../utils/statusClass";
+import { formatDateTime } from "../utils/formatDateTime";
+import { ACTIVITY_REFRESH_INTERVAL_MS } from "../config/query";
+import { TableEmptyState } from "../components/TableEmptyState";
+import { TableToolbar } from "../components/TableToolbar";
+import { matchesSearch } from "../utils/matchesSearch";
+import { TableResultSummary } from "../components/TableResultSummary";
+import { QueryFeedback } from "../components/QueryFeedback";
 
 export function AuditLogsPage() {
     const { user, accessToken } = useAuth();
@@ -30,25 +21,24 @@ export function AuditLogsPage() {
         queryKey: ["audit-logs", user?.tenantId],
         queryFn: () => getAuditLogs(user!.tenantId, accessToken!),
         enabled: Boolean(user?.tenantId && accessToken),
-        refetchInterval: 5000,
+        refetchInterval: ACTIVITY_REFRESH_INTERVAL_MS,
     });
 
     const auditLogs = auditLogsQuery.data ?? [];
-    const normalizedSearch = search.trim().toLowerCase();
     const filteredLogs = auditLogs.filter((log) => {
         const matchesCategory = category === "ALL"
             || (category === "WEBHOOK" && log.action.startsWith("WEBHOOK"))
             || (category === "SYNC_JOB" && log.action.startsWith("SYNC_JOB"))
             || (category === "FAILURE" && (log.action.includes("FAILED") || log.action.includes("DEAD_LETTER")));
-        const matchesSearch = !normalizedSearch || [
+        const matchesQuery = matchesSearch(search, [
             log.id,
             log.action,
             log.message,
             log.webhookEventId,
             log.syncJobId,
-        ].some((value) => String(value ?? "").toLowerCase().includes(normalizedSearch));
+        ]);
 
-        return matchesCategory && matchesSearch;
+        return matchesCategory && matchesQuery;
     });
 
     const webhookLogs = auditLogs.filter((log) =>
@@ -113,13 +103,14 @@ export function AuditLogsPage() {
                 </article>
             </section>
 
-            {auditLogsQuery.isLoading && <p className="muted">Loading audit logs...</p>}
+            <QueryFeedback
+                isLoading={auditLogsQuery.isLoading}
+                isError={auditLogsQuery.isError}
+                loadingMessage="Loading audit logs..."
+                errorMessage="Failed to load audit logs."
+            />
 
-            {auditLogsQuery.isError && (
-                <p className="error">Failed to load audit logs.</p>
-            )}
-
-            <section className="table-toolbar" aria-label="Audit log filters">
+            <TableToolbar label="Audit log filters">
                 <label className="toolbar-field">
                     <span>Search</span>
                     <input
@@ -141,7 +132,7 @@ export function AuditLogsPage() {
                         <option value="FAILURE">Failures</option>
                     </select>
                 </label>
-                <p className="toolbar-summary">Showing {filteredLogs.length} of {auditLogs.length} logs</p>
+                <TableResultSummary visibleCount={filteredLogs.length} totalCount={auditLogs.length} itemLabel="logs" />
                 <button
                     type="button"
                     className="secondary-button"
@@ -150,10 +141,11 @@ export function AuditLogsPage() {
                 >
                     Export CSV
                 </button>
-            </section>
+            </TableToolbar>
 
             <section className="table-card">
                 <table>
+                    <caption className="sr-only">Tenant audit activity</caption>
                     <thead>
                     <tr>
                         <th>ID</th>
@@ -170,18 +162,18 @@ export function AuditLogsPage() {
                         <tr key={log.id}>
                             <td>{log.id}</td>
                             <td>
-                  <span className={getActionClass(log.action)}>
+                  <span className={getStatusClass(log.action)}>
                     {log.action}
                   </span>
                             </td>
                             <td>{log.message}</td>
                             <td>{log.webhookEventId ?? "-"}</td>
                             <td>{log.syncJobId ?? "-"}</td>
-                            <td>{new Date(log.createdAt).toLocaleString()}</td>
+                            <td>{formatDateTime(log.createdAt)}</td>
                         </tr>
                     ))}
                     {filteredLogs.length === 0 && !auditLogsQuery.isLoading && (
-                        <tr><td colSpan={6} className="empty-state">No audit logs match these filters.</td></tr>
+                        <TableEmptyState columnCount={6} message="No audit logs match these filters." />
                     )}
                     </tbody>
                 </table>
