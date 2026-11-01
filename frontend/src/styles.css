@@ -42,6 +42,11 @@ button:disabled {
     cursor: not-allowed;
 }
 
+:where(button, input, select, textarea, a):focus-visible {
+    outline: 3px solid #7dd3fc;
+    outline-offset: 2px;
+}
+
 .secondary-button {
     border: 1px solid #38bdf8;
     background: transparent;
